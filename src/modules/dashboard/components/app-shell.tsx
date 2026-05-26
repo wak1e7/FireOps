@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { History, Home, Menu, Siren, Truck, UsersRound, X } from "lucide-react";
 import { NotificationBell } from "@/modules/notificaciones/components/notification-bell";
 import { NotificationPermissionPrompt } from "@/modules/notificaciones/components/notification-permission-prompt";
@@ -32,6 +32,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mobileNavClosing, setMobileNavClosing] = useState(false);
   const profiles = useOperationsStore((state) => state.profiles);
+  const loaded = useOperationsStore((state) => state.loaded);
+  const loadOperations = useOperationsStore((state) => state.loadOperations);
   const currentProfile = getCurrentProfile(profiles);
   const visibleNavItems = navItems.filter((item) => !item.chiefsOnly || isChiefProfile(currentProfile));
   const hasActiveFirefighter = profiles.some(
@@ -43,6 +45,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const companyOperational = hasActiveFirefighter && hasActivePilot;
   const companyStateLabel = companyOperational ? "Compañía operativa" : "Compañía fuera de servicio";
   const companyStateClass = companyOperational ? "text-[#10B981]" : "text-fire-red";
+
+  useEffect(() => {
+    if (!loaded) loadOperations();
+  }, [loadOperations, loaded]);
 
   function openMobileNav() {
     setMobileNavClosing(false);

@@ -143,6 +143,8 @@ for (const member of roster) {
     rank_id: rank?.id,
     special_position_id: position?.id ?? null,
     service_status: "fuera_de_servicio",
+    service_mode: null,
+    service_started_at: null,
     pilot_type: member.pilotType ?? null,
     must_change_password: true
   });
@@ -171,6 +173,8 @@ const { error: adminProfileError } = await admin.from("profiles").upsert({
   rank_id: null,
   special_position_id: null,
   service_status: "fuera_de_servicio",
+  service_mode: null,
+  service_started_at: null,
   pilot_type: null,
   must_change_password: true
 });

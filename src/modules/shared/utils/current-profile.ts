@@ -7,5 +7,9 @@ export function getCurrentProfile(profiles: Profile[]) {
 }
 
 export function isChiefProfile(profile?: Profile) {
-  return profile?.specialPosition === "Primer Jefe" || profile?.specialPosition === "Segundo Jefe";
+  return (
+    profile?.role === "admin" ||
+    profile?.specialPosition === "Primer Jefe" ||
+    profile?.specialPosition === "Segundo Jefe"
+  );
 }

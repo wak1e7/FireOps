@@ -17,6 +17,7 @@ drop table if exists public.companies cascade;
 drop type if exists public.vehicle_status cascade;
 drop type if exists public.service_status cascade;
 drop type if exists public.pilot_type cascade;
+drop type if exists public.service_mode cascade;
 drop type if exists public.role_name cascade;
 drop type if exists public.event_severity cascade;
 drop type if exists public.emergency_response_status cascade;
@@ -31,6 +32,7 @@ create type public.vehicle_status as enum (
 );
 
 create type public.service_status as enum ('en_servicio', 'en_alerta', 'fuera_de_servicio');
+create type public.service_mode as enum ('bombero', 'piloto_voluntario', 'piloto_rentado');
 create type public.pilot_type as enum ('voluntario', 'rentado');
 create type public.role_name as enum ('admin', 'bombero', 'piloto', 'primer_jefe', 'segundo_jefe');
 create type public.event_severity as enum ('info', 'success', 'warning', 'danger');
@@ -76,6 +78,8 @@ create table public.profiles (
   rank_id uuid references public.ranks(id),
   special_position_id uuid references public.special_positions(id),
   service_status public.service_status not null default 'fuera_de_servicio',
+  service_mode public.service_mode,
+  service_started_at timestamptz,
   pilot_type public.pilot_type,
   is_active boolean not null default true,
   must_change_password boolean not null default true,
