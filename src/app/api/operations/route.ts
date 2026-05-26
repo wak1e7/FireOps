@@ -85,6 +85,11 @@ function mapProfile(row: ProfileRow): Profile {
   };
 }
 
+function pilotTypeForProfile(profile: Profile): PilotType | null {
+  if (profile.role === "piloto") return profile.pilotType ?? "voluntario";
+  return profile.canVolunteerAsPilot ? "voluntario" : null;
+}
+
 function mapVehicle(row: {
   id: string;
   code: string;
@@ -311,7 +316,7 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
       service_status: "fuera_de_servicio",
       service_mode: null,
       service_started_at: null,
-      pilot_type: payload.profile.canVolunteerAsPilot ? "voluntario" : payload.profile.pilotType ?? null,
+      pilot_type: pilotTypeForProfile(payload.profile),
       is_active: true,
       must_change_password: true
     });
@@ -338,7 +343,7 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
         phone: payload.profile.phone,
         rank_id: rank?.id ?? null,
         special_position_id: position?.id ?? null,
-        pilot_type: payload.profile.canVolunteerAsPilot ? "voluntario" : payload.profile.pilotType ?? null,
+        pilot_type: pilotTypeForProfile(payload.profile),
         updated_at: new Date().toISOString()
       })
       .eq("id", payload.profile.id);
