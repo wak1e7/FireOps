@@ -1,0 +1,18 @@
+{
+  "name": "FireOps",
+  "short_name": "FireOps",
+  "description": "Control operativo para compañías de bomberos",
+  "start_url": "/login",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B1120",
+  "theme_color": "#DC2626",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
