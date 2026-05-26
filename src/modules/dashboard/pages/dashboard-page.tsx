@@ -35,10 +35,10 @@ export function DashboardPage() {
             <div>
               <p className="text-sm font-bold text-red-200/82">Emergencias</p>
               <h2 className="mt-2 text-4xl font-black leading-tight tracking-tight text-red-100 sm:text-5xl">
-                Reportar emergencia
+                Emitir alerta operativa
               </h2>
               <p className="mt-3 max-w-2xl text-base leading-7 text-white/68">
-                Accede al módulo de alertas para notificar al personal en servicio y en alerta.
+                Notifica rápidamente al personal disponible de la compañía.
               </p>
             </div>
             <Link
@@ -46,7 +46,7 @@ export function DashboardPage() {
               className="inline-flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-fire-red px-4 text-lg font-semibold text-white shadow-[0_18px_50px_rgba(220,38,38,0.24)] transition hover:bg-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200 lg:w-72"
             >
               <Siren className="h-5 w-5" />
-              Reportar emergencia
+              Emitir alerta operativa
             </Link>
             </div>
           </section>
@@ -54,13 +54,13 @@ export function DashboardPage() {
 
         <section className="grid gap-3 md:grid-cols-3">
           <MetricCard title="Bomberos en servicio" value={activeFirefighters.length} icon={ShieldCheck} tone="green" />
-          <MetricCard title="Pilotos activos" value={activePilots.length} icon={Ambulance} tone="blue" />
+          <MetricCard title="Pilotos en servicio" value={activePilots.length} icon={Ambulance} tone="blue" />
           <MetricCard title="Unidades operativas" value={operationalVehicles.length} icon={Truck} tone="green" />
         </section>
 
         <section className="grid gap-5 xl:grid-cols-2">
           <ActivePersonnelList title="Bomberos en servicio" role="bombero" />
-          <ActivePersonnelList title="Pilotos disponibles" role="piloto" />
+          <ActivePersonnelList title="Pilotos en servicio" role="piloto" />
         </section>
 
         <VehicleList />

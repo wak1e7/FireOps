@@ -85,7 +85,7 @@ export function ActivePersonnelList({
           </Card>
         ))}
         {!activeProfiles.length ? (
-          <Card className="p-5 text-sm font-medium text-white/52">No hay personal en esta lista.</Card>
+          <Card className="p-5 text-sm font-medium text-white/52">No hay personal operativo actualmente.</Card>
         ) : null}
       </div>
     </section>

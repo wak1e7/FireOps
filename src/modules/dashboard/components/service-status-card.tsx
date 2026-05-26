@@ -2,22 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock3, LogOut } from "lucide-react";
-import { formatDateTime } from "@/lib/utils";
+import { formatTime } from "@/lib/utils";
 import { useOperationsStore } from "@/modules/dashboard/stores/operations-store";
 import { getCurrentProfile } from "@/modules/shared/utils/current-profile";
 import type { ServiceMode, ServiceStatus } from "@/modules/shared/types/domain";
-
-function serviceModeLabel(mode?: ServiceMode | null) {
-  if (mode === "piloto_rentado") return "Piloto rentado";
-  if (mode === "piloto_voluntario") return "Piloto voluntario";
-  return "Bombero";
-}
 
 function statusCopy(status?: ServiceStatus) {
   if (status === "en_servicio") {
     return {
       title: "En servicio",
-      text: "Tu disponibilidad operativa está activa para despacho.",
+      text: "Actualmente te encuentras disponible para atención de emergencias.",
       color: "text-emerald-100",
       border: "border-emerald-300/35"
     };
@@ -25,14 +19,14 @@ function statusCopy(status?: ServiceStatus) {
   if (status === "en_alerta") {
     return {
       title: "En alerta",
-      text: "Estás realizando otras actividades, pero disponible ante una emergencia.",
+      text: "Te encuentras en alerta y disponible para apoyo operativo.",
       color: "text-yellow-100",
       border: "border-yellow-300/35"
     };
   }
   return {
     title: "Fuera de servicio",
-    text: "Marca tu disponibilidad cuando estés listo para operar.",
+    text: "Actualmente no te encuentras disponible para atención de emergencias.",
     color: "text-red-100",
     border: "border-red-400/30"
   };
@@ -64,7 +58,7 @@ export function ServiceStatusCard() {
   const inAlert = serviceStatus === "en_alerta";
   const status = statusCopy(serviceStatus);
   const registrationTime = currentProfile?.serviceStartedAt
-    ? formatDateTime(currentProfile.serviceStartedAt)
+    ? formatTime(currentProfile.serviceStartedAt)
     : "Pendiente de registro";
 
   useEffect(() => {
@@ -82,9 +76,7 @@ export function ServiceStatusCard() {
             {status.title}
           </h2>
           <p className="mt-3 max-w-lg text-base leading-7 text-white/68">
-            {inService
-              ? `Tu disponibilidad operativa está activa como ${serviceModeLabel(currentProfile?.serviceMode)}.`
-              : status.text}
+            {status.text}
           </p>
           {!inService && !inAlert && serviceOptions.length > 1 ? (
             <div className="mt-4 flex flex-wrap gap-2">
@@ -148,7 +140,7 @@ export function ServiceStatusCard() {
       </div>
       <div className="mt-5 flex items-center gap-2 text-sm text-white/54">
         <Clock3 className={`h-4 w-4 ${inService ? "text-emerald-200" : inAlert ? "text-yellow-200" : "text-red-200"}`} />
-        {inService || inAlert ? `Registrado desde ${registrationTime}` : "Se registrará la hora al entrar en servicio o quedar en alerta."}
+        {inService ? `En servicio desde las ${registrationTime}` : inAlert ? `En alerta desde las ${registrationTime}` : "Se registrará la hora al entrar en servicio o quedar en alerta."}
       </div>
     </section>
   );
