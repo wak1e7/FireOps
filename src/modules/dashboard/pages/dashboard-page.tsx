@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Ambulance, ShieldCheck, Siren, Truck } from "lucide-react";
+import { Flame, Gauge, Siren, Truck } from "lucide-react";
 import { ActivePersonnelList } from "@/modules/bomberos/components/active-personnel-list";
 import { AppShell } from "@/modules/dashboard/components/app-shell";
 import { MetricCard } from "@/modules/dashboard/components/metric-card";
@@ -53,8 +53,8 @@ export function DashboardPage() {
         ) : null}
 
         <section className="grid gap-3 md:grid-cols-3">
-          <MetricCard title="Bomberos en servicio" value={activeFirefighters.length} icon={ShieldCheck} tone="green" />
-          <MetricCard title="Pilotos en servicio" value={activePilots.length} icon={Ambulance} tone="blue" />
+          <MetricCard title="Bomberos en servicio" value={activeFirefighters.length} icon={Flame} tone="green" />
+          <MetricCard title="Pilotos en servicio" value={activePilots.length} icon={Gauge} tone="blue" />
           <MetricCard title="Unidades operativas" value={operationalVehicles.length} icon={Truck} tone="green" />
         </section>
 
