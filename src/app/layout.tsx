@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { connection } from "next/server";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ToastProvider } from "@/modules/shared/components/toast-provider";
 import "./globals.css";
 
@@ -34,6 +36,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="es" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>
         <ToastProvider>{children}</ToastProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

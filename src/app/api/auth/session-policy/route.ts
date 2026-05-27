@@ -45,8 +45,9 @@ export async function POST(request: Request) {
 
   const response = jsonResponse({ ok: true });
   const options = sessionCookieOptions();
-  response.cookies.set(sessionStartedCookie, String(Date.now()), options);
-  response.cookies.set(sessionContextCookie, await createSessionContext(request, user.id), options);
+  const startedAt = Date.now();
+  response.cookies.set(sessionStartedCookie, String(startedAt), options);
+  response.cookies.set(sessionContextCookie, await createSessionContext(request, user.id, startedAt), options);
   return response;
 }
 

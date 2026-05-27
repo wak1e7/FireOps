@@ -26,6 +26,16 @@ function hasFirebaseConfig() {
   );
 }
 
+function isIosBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
+function isStandaloneApp() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  return window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+}
+
 export function accountNotificationsEnabled() {
   return loadAccountNotificationSettings().enablePushNotifications;
 }
@@ -43,6 +53,14 @@ export async function requestFcmToken(): Promise<FcmRegistrationResult> {
       ok: false,
       reason: "disabled",
       message: "Las notificaciones están desactivadas en la configuración de tu cuenta."
+    };
+  }
+
+  if (isIosBrowser() && !isStandaloneApp()) {
+    return {
+      ok: false,
+      reason: "unsupported",
+      message: "En iPhone, instala FireOps en la pantalla de inicio para activar notificaciones push."
     };
   }
 
@@ -89,7 +107,8 @@ export async function requestFcmToken(): Promise<FcmRegistrationResult> {
 
     window.localStorage.setItem("fireops-fcm-token", token);
     return { ok: true, token };
-  } catch {
+  } catch (error) {
+    console.error("[FireOps] FCM registration failed", error);
     return {
       ok: false,
       reason: "token_error",

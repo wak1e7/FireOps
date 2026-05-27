@@ -18,6 +18,7 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
   const lockRef = useRef(false);
 
   useEffect(() => {
@@ -36,10 +37,25 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
 
     async function verifyPolicy() {
       const response = await fetch("/api/auth/session-policy", { cache: "no-store" });
+      if (response.ok) {
+        setChecking(false);
+        return;
+      }
+
+      const body = (await response.json().catch(() => null)) as { reason?: string } | null;
+      if (body?.reason === "missing_context" || body?.reason === "suspicious_context") {
+        const refreshed = await fetch("/api/auth/session-policy", { method: "POST" });
+        if (refreshed.ok) {
+          setChecking(false);
+          return;
+        }
+      }
+
       if (response.status === 401) {
         await createClient().auth.signOut();
         router.replace("/login");
       }
+      setChecking(false);
     }
 
     if (!window.localStorage.getItem(lastActivityKey)) markActivity();
@@ -75,7 +91,13 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {children}
+      {checking ? (
+        <main className="grid min-h-dvh place-items-center bg-fire-tactical text-white">
+          <p className="text-sm font-semibold text-white/62">Validando sesiÃ³n...</p>
+        </main>
+      ) : (
+        children
+      )}
       {locked ? (
         <div className="fixed inset-0 z-[80] grid place-items-center bg-[#020617]/88 p-4 backdrop-blur-md">
           <form className="glass-panel w-full max-w-sm rounded-3xl p-6 text-white" onSubmit={unlock}>

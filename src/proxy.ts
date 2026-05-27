@@ -23,7 +23,7 @@ export async function proxy(request: NextRequest) {
     "img-src 'self' data: blob:",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    "connect-src 'self' https://*.supabase.co https://*.supabase.in https://fcmregistrations.googleapis.com https://firebaseinstallations.googleapis.com https://www.googleapis.com",
+    "connect-src 'self' https://*.supabase.co https://*.supabase.in https://fcmregistrations.googleapis.com https://firebaseinstallations.googleapis.com https://www.googleapis.com https://vitals.vercel-insights.com",
     "worker-src 'self'",
     "manifest-src 'self'"
   ].join("; ");

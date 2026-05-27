@@ -4,10 +4,7 @@ export type SessionPolicyStatus =
   | { ok: true }
   | { ok: false; reason: "expired" | "suspicious_context" | "missing_context" };
 
-function getClientAddress(request: Request) {
-  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwardedFor || request.headers.get("x-real-ip") || "local";
-}
+const legacyContextMigrationEndsAt = Date.UTC(2026, 4, 30, 0, 0, 0);
 
 function getUserAgent(request: Request) {
   return request.headers.get("user-agent") ?? "unknown";
@@ -21,9 +18,9 @@ async function sha256Hex(value: string) {
     .join("");
 }
 
-export async function createSessionContext(request: Request, userId: string) {
+export async function createSessionContext(request: Request, userId: string, startedAt: number) {
   const secret = process.env.SESSION_FINGERPRINT_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "fireops-dev";
-  return sha256Hex(`${secret}:${userId}:${getClientAddress(request)}:${getUserAgent(request)}`);
+  return sha256Hex(`${secret}:${userId}:${startedAt}:${getUserAgent(request)}`);
 }
 
 export async function validateSessionPolicy(request: Request, userId: string): Promise<SessionPolicyStatus> {
@@ -46,8 +43,10 @@ export async function validateSessionPolicy(request: Request, userId: string): P
   if (!startedAt || !storedContext) return { ok: false, reason: "missing_context" };
   if (Date.now() - startedAt > SESSION_MAX_AGE_MS) return { ok: false, reason: "expired" };
 
-  const currentContext = await createSessionContext(request, userId);
-  if (currentContext !== storedContext) return { ok: false, reason: "suspicious_context" };
+  const currentContext = await createSessionContext(request, userId, startedAt);
+  if (currentContext !== storedContext && Date.now() >= legacyContextMigrationEndsAt) {
+    return { ok: false, reason: "suspicious_context" };
+  }
 
   return { ok: true };
 }
