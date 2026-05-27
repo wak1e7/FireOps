@@ -14,7 +14,8 @@ import type {
   VehicleStatus
 } from "@/modules/shared/types/domain";
 import { isAllowedOrigin, jsonResponse, readJsonObject } from "@/lib/server-security";
-import { validateSessionPolicy } from "@/lib/session-policy";
+import { createSessionContext, sessionCookieOptions, validateSessionPolicy } from "@/lib/session-policy";
+import { sessionContextCookie, sessionStartedCookie } from "@/lib/session-policy-shared";
 import { emergencyResponseLabel, emergencyTypeLabel, vehicleStatusLabel } from "@/modules/shared/utils/labels";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -141,6 +142,21 @@ async function currentUserProfile(request: Request) {
 
 function isChiefOrAdmin(role?: RoleName) {
   return role === "admin" || role === "primer_jefe" || role === "segundo_jefe";
+}
+
+async function attachFreshSessionPolicy(request: Request, response: ReturnType<typeof jsonResponse>, userId: string) {
+  const startedAt = Date.now();
+  const options = sessionCookieOptions();
+  response.cookies.set(sessionStartedCookie, String(startedAt), options);
+  response.cookies.set(sessionContextCookie, await createSessionContext(request, userId, startedAt), options);
+  return response;
+}
+
+async function validateOrRefreshPolicy(request: Request, response: ReturnType<typeof jsonResponse>, userId: string) {
+  const policy = await validateSessionPolicy(request, userId);
+  if (policy.ok) return response;
+  if (policy.reason === "expired") return null;
+  return attachFreshSessionPolicy(request, response, userId);
 }
 
 async function getCatalogs(admin: ReturnType<typeof createAdminClient>) {
@@ -596,9 +612,9 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
 export async function GET(request: Request) {
   const user = await currentUserProfile(request);
   if (!user) return jsonResponse({ message: "No autorizado." }, { status: 401 });
-  const policy = await validateSessionPolicy(request, user.id);
-  if (!policy.ok) return jsonResponse({ message: "Sesión expirada." }, { status: 401 });
-  return jsonResponse(await loadOperations());
+  const response = await validateOrRefreshPolicy(request, jsonResponse(await loadOperations()), user.id);
+  if (!response) return jsonResponse({ message: "Sesión expirada." }, { status: 401 });
+  return response;
 }
 
 export async function POST(request: Request) {
@@ -609,11 +625,12 @@ export async function POST(request: Request) {
   const user = await currentUserProfile(request);
   if (!user) return jsonResponse({ message: "No autorizado." }, { status: 401 });
   const policy = await validateSessionPolicy(request, user.id);
-  if (!policy.ok) return jsonResponse({ message: "Sesión expirada." }, { status: 401 });
+  if (!policy.ok && policy.reason === "expired") return jsonResponse({ message: "Sesión expirada." }, { status: 401 });
   const payload = (await readJsonObject(request)) as ActionPayload | null;
   if (!payload || typeof payload.action !== "string") {
     return jsonResponse({ message: "Solicitud inválida." }, { status: 400 });
   }
   await handleAction(payload, user);
-  return jsonResponse(await loadOperations());
+  const response = jsonResponse(await loadOperations());
+  return policy.ok ? response : attachFreshSessionPolicy(request, response, user.id);
 }
