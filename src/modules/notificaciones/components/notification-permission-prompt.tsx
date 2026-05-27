@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { requestFcmToken } from "@/modules/notificaciones/services/fcm-service";
+import { browserSupportsNotifications, requestFcmToken } from "@/modules/notificaciones/services/fcm-service";
 import {
   hasAskedNotificationPermissionOnDevice,
   markNotificationPermissionAskedOnDevice,
@@ -17,6 +17,7 @@ export function NotificationPermissionPrompt() {
 
   useEffect(() => {
     if (hasAskedNotificationPermissionOnDevice()) return;
+    if (!browserSupportsNotifications()) return;
 
     const existingToken = window.localStorage.getItem("fireops-fcm-token");
     if (existingToken || Notification.permission === "granted") {

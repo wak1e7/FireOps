@@ -36,6 +36,10 @@ function isStandaloneApp() {
   return window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
 }
 
+export function browserSupportsNotifications() {
+  return typeof window !== "undefined" && "Notification" in window && "serviceWorker" in navigator;
+}
+
 export function accountNotificationsEnabled() {
   return loadAccountNotificationSettings().enablePushNotifications;
 }
@@ -53,6 +57,14 @@ export async function requestFcmToken(): Promise<FcmRegistrationResult> {
       ok: false,
       reason: "disabled",
       message: "Las notificaciones están desactivadas en la configuración de tu cuenta."
+    };
+  }
+
+  if (!browserSupportsNotifications()) {
+    return {
+      ok: false,
+      reason: "unsupported",
+      message: "Este navegador no soporta notificaciones push."
     };
   }
 
