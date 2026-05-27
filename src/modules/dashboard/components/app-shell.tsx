@@ -10,6 +10,7 @@ import { NotificationPermissionPrompt } from "@/modules/notificaciones/component
 import { ProfileMenu } from "@/modules/perfil/components/profile-menu";
 import { useOperationsStore } from "@/modules/dashboard/stores/operations-store";
 import { getCurrentProfile, isChiefProfile } from "@/modules/shared/utils/current-profile";
+import { SessionGuard } from "@/modules/auth/components/session-guard";
 
 const navItems = [
   { label: "Inicio", href: "/operaciones", icon: Home, chiefsOnly: false },
@@ -97,6 +98,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
+    <SessionGuard>
     <main className="min-h-dvh bg-fire-tactical bg-radial-red text-white">
       <header className="sticky top-0 z-40 flex h-16 w-full items-center border-b border-white/10 bg-[#090f1d]/92 shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl">
         <button
@@ -180,5 +182,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <NotificationPermissionPrompt />
     </main>
+    </SessionGuard>
   );
 }

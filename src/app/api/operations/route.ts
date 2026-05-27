@@ -14,6 +14,7 @@ import type {
   VehicleStatus
 } from "@/modules/shared/types/domain";
 import { isAllowedOrigin, jsonResponse, readJsonObject } from "@/lib/server-security";
+import { validateSessionPolicy } from "@/lib/session-policy";
 import { emergencyResponseLabel, emergencyTypeLabel, vehicleStatusLabel } from "@/modules/shared/utils/labels";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -595,6 +596,8 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
 export async function GET(request: Request) {
   const user = await currentUserProfile(request);
   if (!user) return jsonResponse({ message: "No autorizado." }, { status: 401 });
+  const policy = await validateSessionPolicy(request, user.id);
+  if (!policy.ok) return jsonResponse({ message: "Sesión expirada." }, { status: 401 });
   return jsonResponse(await loadOperations());
 }
 
@@ -605,6 +608,8 @@ export async function POST(request: Request) {
 
   const user = await currentUserProfile(request);
   if (!user) return jsonResponse({ message: "No autorizado." }, { status: 401 });
+  const policy = await validateSessionPolicy(request, user.id);
+  if (!policy.ok) return jsonResponse({ message: "Sesión expirada." }, { status: 401 });
   const payload = (await readJsonObject(request)) as ActionPayload | null;
   if (!payload || typeof payload.action !== "string") {
     return jsonResponse({ message: "Solicitud inválida." }, { status: 400 });

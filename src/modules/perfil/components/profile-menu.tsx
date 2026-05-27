@@ -47,6 +47,7 @@ export function ProfileMenu() {
     setOpen(false);
     window.localStorage.removeItem("fireops-demo-session");
     window.localStorage.removeItem("fireops-first-login-complete");
+    await fetch("/api/auth/session-policy", { method: "DELETE" }).catch(() => null);
     await createClient().auth.signOut();
     router.push("/login");
   }

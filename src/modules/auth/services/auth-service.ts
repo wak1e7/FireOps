@@ -27,6 +27,9 @@ export async function loginWithFirefighterCode(
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
 
+    const policyResponse = await fetch("/api/auth/session-policy", { method: "POST" });
+    if (!policyResponse.ok) throw new Error("No se pudo iniciar la política de sesión.");
+
     window.localStorage.setItem("fireops-demo-session", code);
     return { ok: true, mustChangePassword };
   } catch {
