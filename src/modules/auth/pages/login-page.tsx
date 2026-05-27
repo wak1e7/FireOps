@@ -11,8 +11,8 @@ import { loginWithFirefighterCode } from "@/modules/auth/services/auth-service";
 
 export function LoginPage() {
   const router = useRouter();
-  const [code, setCode] = useState("A06692");
-  const [password, setPassword] = useState("Temporal123!");
+  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);

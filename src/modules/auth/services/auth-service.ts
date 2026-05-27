@@ -1,23 +1,11 @@
 import { createClient } from "@/utils/supabase/client";
 import type { FirstLoginPayload, LoginResult } from "@/modules/auth/types/auth";
-import roster from "../../../../data/b88-roster.json";
-
-const DEMO_CODES = new Set((roster as Array<{ code: string }>).map((member) => member.code));
 
 export async function loginWithFirefighterCode(
   firefighterCode: string,
   password: string
 ): Promise<LoginResult> {
   const code = firefighterCode.trim().toUpperCase();
-  const rawDisabledCodes = window.localStorage.getItem("fireops-disabled-codes");
-  const disabledCodes = new Set<string>(rawDisabledCodes ? JSON.parse(rawDisabledCodes) : []);
-
-  if (disabledCodes.has(code)) {
-    return {
-      ok: false,
-      message: "Este usuario está desactivado. Contacta a jefatura."
-    };
-  }
 
   try {
     const resolveResponse = await fetch("/api/auth/resolve-code", {
@@ -42,11 +30,6 @@ export async function loginWithFirefighterCode(
     window.localStorage.setItem("fireops-demo-session", code);
     return { ok: true, mustChangePassword };
   } catch {
-    if (DEMO_CODES.has(code) && password.length >= 6) {
-      window.localStorage.setItem("fireops-demo-session", code);
-      return { ok: true, mustChangePassword: code !== "ADMIN001" };
-    }
-
     return {
       ok: false,
       message: "Código o contraseña inválidos."
@@ -69,9 +52,8 @@ export async function completeFirstLogin(payload: FirstLoginPayload): Promise<Lo
 
     return { ok: true };
   } catch (error) {
-    window.localStorage.setItem("fireops-first-login-complete", "true");
     return {
-      ok: true,
+      ok: false,
       message: error instanceof Error ? error.message : undefined
     };
   }

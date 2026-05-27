@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import type {
   EmergencyAlert,
   EmergencyResponseStatus,
@@ -14,12 +13,14 @@ import type {
   Vehicle,
   VehicleStatus
 } from "@/modules/shared/types/domain";
+import { isAllowedOrigin, jsonResponse, readJsonObject } from "@/lib/server-security";
 import { emergencyResponseLabel, emergencyTypeLabel, vehicleStatusLabel } from "@/modules/shared/utils/labels";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 const companyId = "00000000-0000-0000-0000-000000000101";
 const DEFAULT_TEMPORARY_PASSWORD = "Temporal123!";
+const allowCodeAuthFallback = process.env.FIREOPS_ALLOW_CODE_AUTH === "true" && process.env.NODE_ENV !== "production";
 
 type ActionPayload =
   | { action: "addProfile"; profile: Profile }
@@ -126,7 +127,7 @@ async function currentUserProfile(request: Request) {
   } = await server.auth.getUser();
 
   const admin = createAdminClient();
-  const fallbackCode = request.headers.get("x-fireops-code")?.trim().toUpperCase();
+  const fallbackCode = allowCodeAuthFallback ? request.headers.get("x-fireops-code")?.trim().toUpperCase() : undefined;
   const query = admin.from("profiles").select("id, firefighter_code, user_roles(roles(name))");
   const { data } = user
     ? await query.eq("id", user.id).single()
@@ -593,14 +594,21 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
 
 export async function GET(request: Request) {
   const user = await currentUserProfile(request);
-  if (!user) return NextResponse.json({ message: "No autorizado." }, { status: 401 });
-  return NextResponse.json(await loadOperations());
+  if (!user) return jsonResponse({ message: "No autorizado." }, { status: 401 });
+  return jsonResponse(await loadOperations());
 }
 
 export async function POST(request: Request) {
+  if (!isAllowedOrigin(request)) {
+    return jsonResponse({ message: "Origen no permitido." }, { status: 403 });
+  }
+
   const user = await currentUserProfile(request);
-  if (!user) return NextResponse.json({ message: "No autorizado." }, { status: 401 });
-  const payload = (await request.json()) as ActionPayload;
+  if (!user) return jsonResponse({ message: "No autorizado." }, { status: 401 });
+  const payload = (await readJsonObject(request)) as ActionPayload | null;
+  if (!payload || typeof payload.action !== "string") {
+    return jsonResponse({ message: "Solicitud inválida." }, { status: 400 });
+  }
   await handleAction(payload, user);
-  return NextResponse.json(await loadOperations());
+  return jsonResponse(await loadOperations());
 }

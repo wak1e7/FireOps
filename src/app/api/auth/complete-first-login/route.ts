@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { isAllowedOrigin, jsonResponse, readJsonObject } from "@/lib/server-security";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import {
@@ -9,27 +9,30 @@ import {
 } from "@/modules/auth/utils/validators";
 
 export async function POST(request: Request) {
-  const payload = (await request.json()) as {
-    phone?: string;
-    email?: string;
-    password?: string;
-    confirmPassword?: string;
-  };
-
-  if (!payload.phone || !validatePeruPhone(payload.phone)) {
-    return NextResponse.json({ message: "Teléfono inválido. Debe tener 9 números e iniciar con 9." }, { status: 422 });
+  if (!isAllowedOrigin(request)) {
+    return jsonResponse({ message: "Origen no permitido." }, { status: 403 });
   }
 
-  if (!payload.email || !validateEmail(payload.email)) {
-    return NextResponse.json({ message: "Correo inválido." }, { status: 422 });
+  const payload = await readJsonObject(request);
+  const phone = typeof payload?.phone === "string" ? payload.phone : "";
+  const email = typeof payload?.email === "string" ? payload.email : "";
+  const password = typeof payload?.password === "string" ? payload.password : "";
+  const confirmPassword = typeof payload?.confirmPassword === "string" ? payload.confirmPassword : "";
+
+  if (!phone || !validatePeruPhone(phone)) {
+    return jsonResponse({ message: "Teléfono inválido. Debe tener 9 números e iniciar con 9." }, { status: 422 });
   }
 
-  if (!payload.password || payload.password !== payload.confirmPassword) {
-    return NextResponse.json({ message: "Las contraseñas no coinciden." }, { status: 422 });
+  if (!email || !validateEmail(email)) {
+    return jsonResponse({ message: "Correo inválido." }, { status: 422 });
   }
 
-  if (!isStrongPassword(payload.password)) {
-    return NextResponse.json({ message: "La contraseña no cumple las reglas." }, { status: 422 });
+  if (!password || password !== confirmPassword) {
+    return jsonResponse({ message: "Las contraseñas no coinciden." }, { status: 422 });
+  }
+
+  if (!isStrongPassword(password)) {
+    return jsonResponse({ message: "La contraseña no cumple las reglas." }, { status: 422 });
   }
 
   const serverClient = await createClient();
@@ -38,20 +41,20 @@ export async function POST(request: Request) {
   } = await serverClient.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ message: "Sesión no encontrada." }, { status: 401 });
+    return jsonResponse({ message: "Sesión no encontrada." }, { status: 401 });
   }
 
-  const normalizedPhone = formatPeruPhone(payload.phone);
-  const normalizedEmail = payload.email.trim().toLowerCase();
+  const normalizedPhone = formatPeruPhone(phone);
+  const normalizedEmail = email.trim().toLowerCase();
   const admin = createAdminClient();
   const { error: updateUserError } = await admin.auth.admin.updateUserById(user.id, {
     email: normalizedEmail,
-    password: payload.password,
+    password,
     email_confirm: true
   });
 
   if (updateUserError) {
-    return NextResponse.json({ message: updateUserError.message }, { status: 500 });
+    return jsonResponse({ message: "No se pudo actualizar la cuenta." }, { status: 500 });
   }
 
   const { error: profileError } = await admin
@@ -66,8 +69,8 @@ export async function POST(request: Request) {
     .eq("id", user.id);
 
   if (profileError) {
-    return NextResponse.json({ message: profileError.message }, { status: 500 });
+    return jsonResponse({ message: "No se pudo actualizar el perfil." }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  return jsonResponse({ ok: true });
 }

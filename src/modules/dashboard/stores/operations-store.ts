@@ -93,6 +93,7 @@ async function runOperation(action: OperationAction): Promise<OperationsSnapshot
 }
 
 function currentCodeHeader(): Record<string, string> {
+  if (process.env.NODE_ENV === "production") return {};
   if (typeof window === "undefined") return {};
   const code = window.localStorage.getItem("fireops-demo-session");
   return code ? { "x-fireops-code": code } : {};
