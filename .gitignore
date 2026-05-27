@@ -5,6 +5,8 @@ dist
 coverage
 .env*.local
 .vercel
+*report*.md
+*reports*.md
 *.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*
