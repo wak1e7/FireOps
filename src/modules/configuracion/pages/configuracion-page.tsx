@@ -71,7 +71,7 @@ export function ConfiguracionPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-200/70">Configuración</p>
           <h1 className="text-3xl font-black tracking-tight">Configuración de cuenta</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/58">
-            Controla las preferencias personales de FireOps para tu sesión.
+            Administra las preferencias y notificaciones de tu cuenta.
           </p>
         </div>
 

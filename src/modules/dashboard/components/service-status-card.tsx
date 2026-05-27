@@ -140,7 +140,11 @@ export function ServiceStatusCard() {
       </div>
       <div className="mt-5 flex items-center gap-2 text-sm text-white/54">
         <Clock3 className={`h-4 w-4 ${inService ? "text-emerald-200" : inAlert ? "text-yellow-200" : "text-red-200"}`} />
-        {inService ? `En servicio desde las ${registrationTime}` : inAlert ? `En alerta desde las ${registrationTime}` : "Se registrará la hora al entrar en servicio o quedar en alerta."}
+        {inService
+          ? `En servicio desde las ${registrationTime}`
+          : inAlert
+            ? `En alerta desde las ${registrationTime}`
+            : "El sistema registrará automáticamente tu disponibilidad operativa."}
       </div>
     </section>
   );

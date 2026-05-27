@@ -214,7 +214,7 @@ export function VehicleManagement() {
           <span>Unidad</span>
           <span>Placa</span>
           <span>Estado</span>
-          {canManageVehicles ? <span>Más</span> : null}
+          {canManageVehicles ? <span>Acciones</span> : null}
         </div>
 
         <div className="divide-y divide-white/10">
@@ -239,7 +239,7 @@ export function VehicleManagement() {
                 {vehicle.observations ? <p className="mt-2 text-sm text-white/58">{vehicle.observations}</p> : null}
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-white/42">
                   <Clock3 className="h-3.5 w-3.5" />
-                  Actualizado {formatDateTime(vehicle.updatedAt)}
+                  Última actualización: {formatDateTime(vehicle.updatedAt)}
                 </p>
               </div>
 
@@ -271,10 +271,10 @@ export function VehicleManagement() {
               {canManageVehicles ? (
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" size="sm" className="border border-sky-400/25 bg-sky-500/14 text-sky-100 hover:bg-sky-500/22" onClick={() => setSelectedVehicle(vehicle)}>
-                    Info
+                    Detalles
                   </Button>
                   <Button type="button" variant={vehicle.isActive === false ? "default" : "danger"} size="sm" onClick={() => setVehicleToToggle(vehicle)}>
-                    {vehicle.isActive === false ? "Activar" : "Desactivar"}
+                    {vehicle.isActive === false ? "Activar" : "Deshabilitar"}
                   </Button>
                 </div>
               ) : null}
@@ -306,13 +306,13 @@ export function VehicleManagement() {
       {selectedVehicle ? <VehicleFormModal vehicle={selectedVehicle} onClose={() => setSelectedVehicle(null)} /> : null}
       {vehicleToToggle ? (
         <ConfirmToggleModal
-          title={vehicleToToggle.isActive === false ? "Activar unidad" : "Desactivar unidad"}
+          title={vehicleToToggle.isActive === false ? "Activar unidad" : "Deshabilitar unidad"}
           message={
             vehicleToToggle.isActive === false
               ? `¿Deseas activar ${vehicleToToggle.name}? Se podrá cambiar su estado operativo nuevamente.`
               : `¿Deseas desactivar ${vehicleToToggle.name}? No se podrá cambiar su estado y dejará de aparecer para bomberos comunes.`
           }
-          confirmLabel={vehicleToToggle.isActive === false ? "Activar" : "Desactivar"}
+          confirmLabel={vehicleToToggle.isActive === false ? "Activar" : "Deshabilitar"}
           danger={vehicleToToggle.isActive !== false}
           onCancel={() => setVehicleToToggle(null)}
           onConfirm={() => {

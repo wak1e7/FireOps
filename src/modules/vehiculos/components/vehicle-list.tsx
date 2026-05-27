@@ -39,7 +39,7 @@ export function VehicleList() {
                 <p className="mt-2 text-sm leading-5 text-white/72">{vehicle.observations}</p>
                 <div className="mt-3 flex items-center gap-2 text-xs text-white/42">
                   <Clock3 className="h-4 w-4" />
-                  Actualizado {formatTime(vehicle.updatedAt)}
+                  Última actualización: {formatTime(vehicle.updatedAt)}
                 </div>
               </div>
             </div>

@@ -448,7 +448,7 @@ export function PersonnelList() {
           <span>Rango</span>
           <span>Cargo/Rol</span>
           <span>Servicio</span>
-          {canManagePersonnel ? <span>Más</span> : null}
+          {canManagePersonnel ? <span>Acciones</span> : null}
         </div>
 
         <div className="divide-y divide-white/10">
@@ -486,7 +486,7 @@ export function PersonnelList() {
               {canManagePersonnel ? (
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" size="sm" className="border border-sky-400/25 bg-sky-500/14 text-sky-100 hover:bg-sky-500/22" onClick={() => setSelectedProfile(profile)}>
-                    Info
+                    Detalles
                   </Button>
                   <Button
                     type="button"
@@ -494,7 +494,7 @@ export function PersonnelList() {
                     size="sm"
                     onClick={() => setProfileToToggle(profile)}
                   >
-                    {profile.isActive === false ? "Activar" : "Desactivar"}
+                    {profile.isActive === false ? "Activar" : "Deshabilitar"}
                   </Button>
                 </div>
               ) : null}
@@ -526,13 +526,13 @@ export function PersonnelList() {
       {selectedProfile ? <PersonnelInfoModal profile={selectedProfile} onClose={() => setSelectedProfile(null)} /> : null}
       {profileToToggle ? (
         <ConfirmToggleModal
-          title={profileToToggle.isActive === false ? "Activar personal" : "Desactivar personal"}
+          title={profileToToggle.isActive === false ? "Activar personal" : "Deshabilitar personal"}
           message={
             profileToToggle.isActive === false
               ? `¿Deseas activar a ${profileToToggle.fullName}? Podrá iniciar sesión nuevamente.`
               : `¿Deseas desactivar a ${profileToToggle.fullName}? No podrá iniciar sesión y será retirado del servicio activo.`
           }
-          confirmLabel={profileToToggle.isActive === false ? "Activar" : "Desactivar"}
+          confirmLabel={profileToToggle.isActive === false ? "Activar" : "Deshabilitar"}
           danger={profileToToggle.isActive !== false}
           onCancel={() => setProfileToToggle(null)}
           onConfirm={() => {

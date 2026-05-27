@@ -60,7 +60,7 @@ function EmergencyAlertModal({ issuer, onClose }: { issuer: Profile; onClose: ()
       <section className="glass-panel mx-auto my-4 max-h-[calc(100dvh-2rem)] w-full max-w-3xl overflow-y-auto rounded-3xl p-5 sm:p-6">
         <header className="flex items-start justify-between gap-4">
           <div className="mb-5">
-            <h2 className="text-2xl font-bold">Emitir alerta de emergencia</h2>
+            <h2 className="text-2xl font-bold">Emitir alerta operativa</h2>
             <p className="mt-1 text-sm text-white/58">Notifica al personal disponible de Salvadora Lambayeque 88.</p>
           </div>
           <button
@@ -188,12 +188,12 @@ function ChiefEmergencyPanel({ currentProfile, autoOpenForm = false }: { current
     <section className="overflow-hidden rounded-2xl border border-red-300/30 bg-[#170812] shadow-glow">
       <div className="flex flex-col gap-4 border-b border-white/10 p-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-red-200/76">Módulo de alerta</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-red-200/76">Emergencias</p>
           <h2 className="mt-2 text-2xl font-black">Alerta de emergencia</h2>
         </div>
         <Button type="button" className="min-h-14 bg-red-600 text-base hover:bg-red-500" onClick={() => setModalOpen(true)}>
           <Siren className="h-5 w-5" />
-          Emitir alerta de emergencia
+          Emitir alerta operativa
         </Button>
       </div>
 
@@ -292,7 +292,7 @@ function ChiefEmergencyPanel({ currentProfile, autoOpenForm = false }: { current
           </div>
         </div>
       ) : (
-        <div className="p-5 text-sm font-semibold text-white/56">Todavía no hay alertas emitidas.</div>
+        <div className="p-5 text-sm font-semibold text-white/56">No existen alertas operativas activas.</div>
       )}
 
       {modalOpen ? <EmergencyAlertModal issuer={currentProfile} onClose={() => setModalOpen(false)} /> : null}

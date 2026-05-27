@@ -82,13 +82,13 @@ export function ActivityFeed() {
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-red-200/70">Historial</p>
           <h1 className="text-3xl font-black tracking-tight">Auditoría operativa</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/58">
-            Registro de entradas, salidas de personal y cambios de estado de unidades.
+            Registro operativo de personal y unidades de emergencia.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex rounded-2xl border border-white/10 bg-white/[0.045] p-1">
             {[
-              ["todos", "Todos"],
+              ["todos", "General"],
               ["personal", "Personal"],
               ["vehiculos", "Unidades"]
             ].map(([value, label]) => (
