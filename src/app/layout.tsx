@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { connection } from "next/server";
 import { ToastProvider } from "@/modules/shared/components/toast-provider";
 import "./globals.css";
 
@@ -26,7 +27,9 @@ export const viewport: Viewport = {
   maximumScale: 1
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  await connection();
+
   return (
     <html lang="es" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>

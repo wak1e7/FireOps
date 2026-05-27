@@ -14,26 +14,25 @@ function createNonce() {
 export async function proxy(request: NextRequest) {
   const nonce = createNonce();
   const requestHeaders = new Headers(request.headers);
+  const contentSecurityPolicy = [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "form-action 'self'",
+    "img-src 'self' data: blob:",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    "connect-src 'self' https://*.supabase.co https://*.supabase.in https://fcmregistrations.googleapis.com https://firebaseinstallations.googleapis.com https://www.googleapis.com",
+    "worker-src 'self'",
+    "manifest-src 'self'"
+  ].join("; ");
+
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
 
   const response = await updateSession(request, requestHeaders);
-  response.headers.set(
-    "Content-Security-Policy",
-    [
-      "default-src 'self'",
-      "base-uri 'self'",
-      "frame-ancestors 'none'",
-      "object-src 'none'",
-      "form-action 'self'",
-      "img-src 'self' data: blob:",
-      `script-src 'self' 'nonce-${nonce}'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
-      "style-src 'self' 'unsafe-inline'",
-      "connect-src 'self' https://*.supabase.co https://*.supabase.in https://fcmregistrations.googleapis.com https://firebaseinstallations.googleapis.com https://www.googleapis.com",
-      "worker-src 'self'",
-      "manifest-src 'self'"
-    ].join("; ")
-  );
-
+  response.headers.set("Content-Security-Policy", contentSecurityPolicy);
   return response;
 }
 
