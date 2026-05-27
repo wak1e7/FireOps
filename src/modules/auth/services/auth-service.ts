@@ -24,10 +24,16 @@ export async function loginWithFirefighterCode(
     };
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
 
-    const policyResponse = await fetch("/api/auth/session-policy", { method: "POST" });
+    const token = data.session?.access_token;
+    if (!token) throw new Error("No se pudo crear la sesión.");
+
+    const policyResponse = await fetch("/api/auth/session-policy", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    });
     if (!policyResponse.ok) throw new Error("No se pudo iniciar la política de sesión.");
 
     window.localStorage.setItem("fireops-demo-session", code);

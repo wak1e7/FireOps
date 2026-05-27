@@ -70,9 +70,13 @@ export function PerfilPage() {
 
   useEffect(() => {
     if (!currentProfile) return;
-    setFullName(currentProfile.fullName);
-    setPhone(currentProfile.phone ? normalizePeruPhone(currentProfile.phone) : "");
-    setEmail(currentProfile.email ?? "");
+    const timer = window.setTimeout(() => {
+      setFullName(currentProfile.fullName);
+      setPhone(currentProfile.phone ? normalizePeruPhone(currentProfile.phone) : "");
+      setEmail(currentProfile.email ?? "");
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [currentProfile, currentProfileId, currentProfileName, currentProfilePhone, currentProfileEmail]);
 
   const phoneValid = phone.length > 0 && validatePeruPhoneDigits(phone);

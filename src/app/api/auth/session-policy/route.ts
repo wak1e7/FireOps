@@ -1,13 +1,25 @@
-import { jsonResponse } from "@/lib/server-security";
+import { isAllowedOrigin, jsonResponse } from "@/lib/server-security";
 import {
   createSessionContext,
   sessionCookieOptions,
   validateSessionPolicy
 } from "@/lib/session-policy";
 import { sessionContextCookie, sessionStartedCookie } from "@/lib/session-policy-shared";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
-async function currentUser() {
+async function currentUser(request: Request) {
+  const authorization = request.headers.get("authorization");
+  const token = authorization?.startsWith("Bearer ") ? authorization.slice("Bearer ".length).trim() : "";
+
+  if (token) {
+    const {
+      data: { user }
+    } = await createAdminClient().auth.getUser(token);
+
+    if (user) return user;
+  }
+
   const supabase = await createClient();
   const {
     data: { user }
@@ -16,7 +28,7 @@ async function currentUser() {
 }
 
 export async function GET(request: Request) {
-  const user = await currentUser();
+  const user = await currentUser(request);
   if (!user) return jsonResponse({ ok: false, reason: "unauthenticated" }, { status: 401 });
 
   const status = await validateSessionPolicy(request, user.id);
@@ -24,7 +36,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const user = await currentUser();
+  if (!isAllowedOrigin(request)) {
+    return jsonResponse({ ok: false, message: "Origen no permitido." }, { status: 403 });
+  }
+
+  const user = await currentUser(request);
   if (!user) return jsonResponse({ ok: false, reason: "unauthenticated" }, { status: 401 });
 
   const response = jsonResponse({ ok: true });
@@ -34,7 +50,11 @@ export async function POST(request: Request) {
   return response;
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  if (!isAllowedOrigin(request)) {
+    return jsonResponse({ ok: false, message: "Origen no permitido." }, { status: 403 });
+  }
+
   const response = jsonResponse({ ok: true });
   response.cookies.set(sessionStartedCookie, "", { path: "/", maxAge: 0 });
   response.cookies.set(sessionContextCookie, "", { path: "/", maxAge: 0 });

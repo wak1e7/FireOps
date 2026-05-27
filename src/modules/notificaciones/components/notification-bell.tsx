@@ -23,7 +23,6 @@ function notificationTime(date: Date) {
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const initializedNotificationsRef = useRef(false);
   const seenNotificationIdsRef = useRef<Set<string>>(new Set());
   const profiles = useOperationsStore((state) => state.profiles);
@@ -65,10 +64,6 @@ export function NotificationBell() {
       return groups;
     }, []);
   }, [notifications]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   function openPanel() {
     setClosing(false);
@@ -151,7 +146,7 @@ export function NotificationBell() {
         ) : null}
       </Button>
 
-      {open && mounted
+      {open && typeof document !== "undefined"
         ? createPortal(
         <div className="fixed inset-0 z-[999] overflow-hidden">
           <button

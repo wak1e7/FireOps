@@ -404,15 +404,8 @@ export function PersonnelList() {
     [profiles, query]
   );
   const totalPages = Math.max(1, Math.ceil(orderedProfiles.length / PAGE_SIZE));
-  const paginatedProfiles = orderedProfiles.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  useEffect(() => {
-    setPage(1);
-  }, [query]);
-
-  useEffect(() => {
-    setPage((current) => Math.min(current, totalPages));
-  }, [totalPages]);
+  const currentPage = Math.min(page, totalPages);
+  const paginatedProfiles = orderedProfiles.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <section className="space-y-4">
@@ -426,7 +419,10 @@ export function PersonnelList() {
             <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <Input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPage(1);
+              }}
               className="h-11 min-h-11 py-2 pl-11 font-semibold"
               placeholder="Buscar personal"
             />
@@ -509,13 +505,13 @@ export function PersonnelList() {
       {orderedProfiles.length > PAGE_SIZE ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm font-semibold text-white/50">
-            Mostrando {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, orderedProfiles.length)} de {orderedProfiles.length}
+            Mostrando {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, orderedProfiles.length)} de {orderedProfiles.length}
           </span>
           <div className="flex gap-2">
-            <Button type="button" variant="secondary" disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+            <Button type="button" variant="secondary" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
               Anterior
             </Button>
-            <Button type="button" variant="secondary" disabled={page === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
+            <Button type="button" variant="secondary" disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
               Siguiente
             </Button>
           </div>

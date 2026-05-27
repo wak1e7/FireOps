@@ -1,7 +1,7 @@
 "use client";
 
 import { ClipboardPlus, LogIn, LogOut, Search, Truck } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -65,15 +65,8 @@ export function ActivityFeed() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [events, filter, query]);
   const totalPages = Math.max(1, Math.ceil(filteredEvents.length / PAGE_SIZE));
-  const paginatedEvents = filteredEvents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  useEffect(() => {
-    setPage(1);
-  }, [filter, query]);
-
-  useEffect(() => {
-    setPage((current) => Math.min(current, totalPages));
-  }, [totalPages]);
+  const currentPage = Math.min(page, totalPages);
+  const paginatedEvents = filteredEvents.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <section className="space-y-4">
@@ -98,7 +91,10 @@ export function ActivityFeed() {
                 className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
                   filter === value ? "bg-fire-red text-white" : "text-white/58 hover:bg-white/8 hover:text-white"
                 }`}
-                onClick={() => setFilter(value as HistoryFilter)}
+                onClick={() => {
+                  setFilter(value as HistoryFilter);
+                  setPage(1);
+                }}
               >
                 {label}
               </button>
@@ -108,7 +104,10 @@ export function ActivityFeed() {
             <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <Input
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPage(1);
+              }}
               className="h-11 min-h-11 py-2 pl-11 font-semibold"
               placeholder="Buscar movimiento"
             />
@@ -144,13 +143,13 @@ export function ActivityFeed() {
       {filteredEvents.length > PAGE_SIZE ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm font-semibold text-white/50">
-            Mostrando {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, filteredEvents.length)} de {filteredEvents.length}
+            Mostrando {(currentPage - 1) * PAGE_SIZE + 1}-{Math.min(currentPage * PAGE_SIZE, filteredEvents.length)} de {filteredEvents.length}
           </span>
           <div className="flex gap-2">
-            <Button type="button" variant="secondary" disabled={page === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+            <Button type="button" variant="secondary" disabled={currentPage === 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
               Anterior
             </Button>
-            <Button type="button" variant="secondary" disabled={page === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
+            <Button type="button" variant="secondary" disabled={currentPage === totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
               Siguiente
             </Button>
           </div>

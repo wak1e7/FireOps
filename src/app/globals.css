@@ -63,6 +63,18 @@ textarea {
   scrollbar-width: none;
 }
 
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes notification-panel-in {
   from {
     transform: translateX(100%);
@@ -100,5 +112,11 @@ textarea {
 
   to {
     transform: translateX(-100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[auth-card-in_450ms_ease-out\] {
+    animation: none;
   }
 }

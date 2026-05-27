@@ -31,7 +31,11 @@ export function ConfiguracionPage() {
   const SelectedIcon = selectedOption.icon;
 
   useEffect(() => {
-    setSettings(loadAccountNotificationSettings());
+    const timer = window.setTimeout(() => {
+      setSettings(loadAccountNotificationSettings());
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {

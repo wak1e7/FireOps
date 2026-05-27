@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Eye, EyeOff, LockKeyhole, ShieldCheck, UserRound } from "lucide-react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { loginWithFirefighterCode } from "@/modules/auth/services/auth-service";
@@ -38,12 +37,7 @@ export function LoginPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_35%,rgba(220,38,38,.18),transparent_30%),linear-gradient(90deg,rgba(0,0,0,.88),rgba(0,0,0,.34),rgba(0,0,0,.72))]" />
       <div className="fire-grid absolute inset-6 hidden rounded-[2rem] border border-red-400/35 opacity-70 md:block" />
 
-      <motion.section
-        initial={{ opacity: 0, y: 18, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
-        className="glass-panel relative z-10 w-full max-w-md rounded-[1.75rem] px-6 py-8 sm:px-10 sm:py-10"
-      >
+      <section className="glass-panel relative z-10 w-full max-w-md animate-[auth-card-in_450ms_ease-out] rounded-[1.75rem] px-6 py-8 sm:px-10 sm:py-10">
         <div className="mb-7 flex flex-col items-center text-center">
           <Image src="/logo.png" alt="FireOps" width={190} height={92} priority className="h-16 w-auto object-contain" />
           <h1 className="mt-3 text-2xl font-bold">Iniciar sesión</h1>
@@ -105,7 +99,7 @@ export function LoginPage() {
             {loading ? "Validando..." : "Iniciar sesión"}
           </Button>
         </form>
-      </motion.section>
+      </section>
     </main>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock3, LogOut } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 import { useOperationsStore } from "@/modules/dashboard/stores/operations-store";
@@ -53,6 +53,9 @@ export function ServiceStatusCard() {
     return [{ value: "bombero", label: "Bombero" }];
   }, [currentProfile]);
   const [selectedMode, setSelectedMode] = useState<ServiceMode>("bombero");
+  const effectiveSelectedMode = serviceOptions.some((option) => option.value === selectedMode)
+    ? selectedMode
+    : serviceOptions[0]?.value ?? "bombero";
   const serviceStatus = currentProfile?.serviceStatus ?? "fuera_de_servicio";
   const inService = serviceStatus === "en_servicio";
   const inAlert = serviceStatus === "en_alerta";
@@ -60,12 +63,6 @@ export function ServiceStatusCard() {
   const registrationTime = currentProfile?.serviceStartedAt
     ? formatTime(currentProfile.serviceStartedAt)
     : "Pendiente de registro";
-
-  useEffect(() => {
-    if (!serviceOptions.some((option) => option.value === selectedMode)) {
-      setSelectedMode(serviceOptions[0]?.value ?? "bombero");
-    }
-  }, [selectedMode, serviceOptions]);
 
   return (
     <section className={`overflow-hidden rounded-[1.75rem] border bg-[#030716] p-5 shadow-glow sm:p-7 ${status.border}`}>
@@ -85,7 +82,7 @@ export function ServiceStatusCard() {
                   key={option.value}
                   type="button"
                   className={`min-h-10 rounded-xl border px-4 text-sm font-bold transition ${
-                    selectedMode === option.value
+                    effectiveSelectedMode === option.value
                       ? "border-red-300/30 bg-fire-red text-white shadow-glow"
                       : "border-white/10 bg-white/[0.055] text-white/62 hover:bg-white/10 hover:text-white"
                   }`}
@@ -104,7 +101,7 @@ export function ServiceStatusCard() {
               className="inline-flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-[#B91C1C] px-4 text-lg font-semibold text-white shadow-[0_18px_50px_rgba(185,28,28,0.24)] transition hover:bg-[#991B1B] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
               onClick={() => {
                 if (!currentProfile) return;
-                toggleService(currentProfile.id, selectedMode, serviceStatus);
+                toggleService(currentProfile.id, effectiveSelectedMode, serviceStatus);
               }}
             >
               <LogOut className="h-5 w-5" />
@@ -117,7 +114,7 @@ export function ServiceStatusCard() {
                 className="inline-flex h-16 w-full items-center justify-center gap-2 rounded-2xl bg-[#10B981] px-4 text-lg font-semibold text-white shadow-[0_18px_50px_rgba(16,185,129,0.24)] transition hover:bg-[#0ea371] focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200"
                 onClick={() => {
                   if (!currentProfile) return;
-                  toggleService(currentProfile.id, selectedMode, "en_servicio");
+                  toggleService(currentProfile.id, effectiveSelectedMode, "en_servicio");
                 }}
               >
                 <CheckCircle2 className="h-5 w-5" />
@@ -128,7 +125,7 @@ export function ServiceStatusCard() {
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#F59E0B] px-4 text-base font-semibold text-[#111827] shadow-[0_18px_50px_rgba(245,158,11,0.2)] transition hover:bg-[#d98a06] focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-100"
                 onClick={() => {
                   if (!currentProfile) return;
-                  toggleService(currentProfile.id, selectedMode, "en_alerta");
+                  toggleService(currentProfile.id, effectiveSelectedMode, "en_alerta");
                 }}
               >
                 <AlertTriangle className="h-5 w-5" />
