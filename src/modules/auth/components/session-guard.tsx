@@ -63,7 +63,7 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
     setLoading(false);
 
     if (!result.ok) {
-      setError("No se pudo reabrir la sesión.");
+      setError("No se pudo confirmar tu identidad. Verifica tu contraseña e intenta nuevamente.");
       return;
     }
 
@@ -84,9 +84,9 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
                 <LockKeyhole className="h-6 w-6" />
               </span>
               <div>
-                <h2 className="text-xl font-black">Sesión bloqueada</h2>
+                <h2 className="text-xl font-black">Acceso en pausa</h2>
                 <p className="mt-1 text-sm leading-5 text-white/58">
-                  Reabre tu sesión rápida. Tu estado operativo no se modificó.
+                  Por seguridad, FireOps pausó tu acceso por inactividad. Tu estado de servicio se mantiene sin cambios.
                 </p>
               </div>
             </div>
@@ -107,7 +107,7 @@ export function SessionGuard({ children }: { children: React.ReactNode }) {
 
             <Button type="submit" className="mt-5 h-12 w-full" disabled={loading}>
               <ShieldCheck className="h-4 w-4" />
-              {loading ? "Validando..." : "Reabrir sesión"}
+              {loading ? "Validando..." : "Continuar en FireOps"}
             </Button>
           </form>
         </div>
