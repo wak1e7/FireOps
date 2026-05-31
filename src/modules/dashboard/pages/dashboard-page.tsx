@@ -9,6 +9,7 @@ import { ServiceStatusCard } from "@/modules/dashboard/components/service-status
 import { useOperationsStore } from "@/modules/dashboard/stores/operations-store";
 import { getCurrentProfile, isChiefProfile } from "@/modules/shared/utils/current-profile";
 import { VehicleList } from "@/modules/vehiculos/components/vehicle-list";
+import { PilotDutyPanel } from "@/modules/pilotos/components/pilot-duty-panel";
 
 export function DashboardPage() {
   const profiles = useOperationsStore((state) => state.profiles);
@@ -62,6 +63,8 @@ export function DashboardPage() {
           <ActivePersonnelList title="Bomberos en servicio" role="bombero" />
           <ActivePersonnelList title="Pilotos en servicio" role="piloto" />
         </section>
+
+        <PilotDutyPanel />
 
         <VehicleList />
       </div>

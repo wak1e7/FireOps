@@ -45,6 +45,7 @@ export interface Profile {
   serviceStartedAt?: string | null;
   pilotType?: PilotType;
   canVolunteerAsPilot?: boolean;
+  canLogin?: boolean;
   temporaryPassword?: string;
   isActive?: boolean;
   mustChangePassword: boolean;

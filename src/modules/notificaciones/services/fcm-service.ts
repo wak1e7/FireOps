@@ -118,6 +118,16 @@ export async function requestFcmToken(): Promise<FcmRegistrationResult> {
     }
 
     window.localStorage.setItem("fireops-fcm-token", token);
+    const response = await fetch("/api/operations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "registerFcmToken",
+        token,
+        deviceLabel: navigator.userAgent.slice(0, 180)
+      })
+    });
+    if (!response.ok) throw new Error("No se pudo guardar el dispositivo.");
     return { ok: true, token };
   } catch (error) {
     console.error("[FireOps] FCM registration failed", error);

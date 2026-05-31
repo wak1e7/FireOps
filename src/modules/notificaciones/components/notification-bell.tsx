@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { Bell, Megaphone, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useOperationsStore } from "@/modules/dashboard/stores/operations-store";
@@ -23,11 +24,12 @@ function notificationTime(date: Date) {
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
+  const router = useRouter();
   const initializedNotificationsRef = useRef(false);
   const seenNotificationIdsRef = useRef<Set<string>>(new Set());
   const profiles = useOperationsStore((state) => state.profiles);
   const allNotifications = useOperationsStore((state) => state.notifications);
-  const addNotification = useOperationsStore((state) => state.addNotification);
+  const loadOperations = useOperationsStore((state) => state.loadOperations);
   const markNotificationsRead = useOperationsStore((state) => state.markNotificationsRead);
   const currentProfile = getCurrentProfile(profiles);
   const isChief = isChiefProfile(currentProfile);
@@ -96,14 +98,8 @@ export function NotificationBell() {
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     subscribeForegroundMessages((payload) => {
-      addNotification({
-        id: crypto.randomUUID(),
-        title: payload.notification?.title ?? "FireOps",
-        body: payload.notification?.body ?? "Nueva actividad operativa",
-        read: false,
-        createdAt: new Date().toISOString(),
-        audience: "all"
-      });
+      showSystemNotification(payload.notification?.title ?? "FireOps", payload.notification?.body ?? "Nueva actividad operativa");
+      loadOperations();
     }).then((cleanup) => {
       unsubscribe = cleanup;
     });
@@ -111,7 +107,7 @@ export function NotificationBell() {
     return () => {
       unsubscribe?.();
     };
-  }, [addNotification]);
+  }, [loadOperations]);
 
   useEffect(() => {
     if (!open) return;
@@ -181,7 +177,17 @@ export function NotificationBell() {
                     {group.items.map((notification) => {
                       const createdAt = new Date(notification.createdAt);
                       return (
-                        <article key={notification.id} className="bg-white/[0.025] px-5 py-5">
+                        <button
+                          key={notification.id}
+                          type="button"
+                          className="block w-full bg-white/[0.025] px-5 py-5 text-left transition hover:bg-white/[0.065]"
+                          onClick={() => {
+                            if (notification.title.toLowerCase().includes("alerta")) {
+                              closePanel();
+                              router.push("/emergencias");
+                            }
+                          }}
+                        >
                           <div className="flex items-start gap-3">
                             <span className="relative mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.055] text-red-100">
                               <Megaphone className="h-4 w-4" />
@@ -198,7 +204,7 @@ export function NotificationBell() {
                               </p>
                             </div>
                           </div>
-                        </article>
+                        </button>
                       );
                     })}
                   </div>

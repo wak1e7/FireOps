@@ -306,7 +306,17 @@ function FirefighterEmergencyCard({ currentProfile }: { currentProfile: Profile 
   const activeAlert = alerts.find((alert) => isAlertUsable(alert) && alert.recipients.some((recipient) => recipient.profileId === currentProfile.id));
   const response = activeAlert?.responses.find((item) => item.profileId === currentProfile.id);
 
-  if (!activeAlert) return null;
+  if (!activeAlert) {
+    return (
+      <section className="overflow-hidden rounded-2xl border border-red-300/30 bg-[#170812] shadow-glow">
+        <div className="border-b border-white/10 p-5">
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-red-200/76">Emergencias</p>
+          <h2 className="mt-2 text-2xl font-black">Alerta de emergencia</h2>
+        </div>
+        <div className="p-5 text-sm font-semibold text-white/56">No existen alertas operativas activas.</div>
+      </section>
+    );
+  }
 
   const canConfirm = currentProfile.serviceStatus === "en_servicio";
   const canGo = currentProfile.serviceStatus === "en_alerta";

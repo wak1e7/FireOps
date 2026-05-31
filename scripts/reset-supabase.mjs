@@ -146,6 +146,7 @@ for (const member of roster) {
     service_mode: null,
     service_started_at: null,
     pilot_type: member.pilotType ?? null,
+    can_login: true,
     must_change_password: true
   });
   if (profileError) throw profileError;
@@ -176,6 +177,7 @@ const { error: adminProfileError } = await admin.from("profiles").upsert({
   service_mode: null,
   service_started_at: null,
   pilot_type: null,
+  can_login: true,
   must_change_password: true
 });
 if (adminProfileError) throw adminProfileError;
@@ -187,6 +189,38 @@ if (adminRole) {
     role_id: adminRole.id
   });
   if (adminRoleError) throw adminRoleError;
+}
+
+for (const pilot of [
+  { code: "PILOTO01", fullName: "CARDENAS, Marcelino" },
+  { code: "PILOTO02", fullName: "CASTAÑEDA, Raul" }
+]) {
+  const user = {
+    code: pilot.code,
+    fullName: pilot.fullName,
+    authEmail: `${pilot.code}@fireops.local`,
+    password: crypto.randomUUID()
+  };
+  const id = await ensureUser(admin, user);
+  await admin.from("profiles").upsert({
+    id,
+    company_id: companyId,
+    firefighter_code: pilot.code,
+    auth_email: user.authEmail,
+    email: null,
+    full_name: pilot.fullName,
+    phone: null,
+    rank_id: null,
+    special_position_id: null,
+    service_status: "fuera_de_servicio",
+    service_mode: null,
+    service_started_at: null,
+    pilot_type: "rentado",
+    can_login: false,
+    must_change_password: false
+  });
+  const pilotRole = roles?.find((item) => item.name === "piloto");
+  if (pilotRole) await admin.from("user_roles").upsert({ user_id: id, role_id: pilotRole.id });
 }
 
 const { data: firstChief } = await admin.from("profiles").select("id").eq("firefighter_code", "A06692").single();

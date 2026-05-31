@@ -44,12 +44,6 @@ export function ServiceStatusCard() {
         { value: "piloto_voluntario", label: "Piloto voluntario" }
       ];
     }
-    if (currentProfile.canVolunteerAsPilot) {
-      return [
-        { value: "bombero", label: "Bombero" },
-        { value: "piloto_voluntario", label: "Piloto voluntario" }
-      ];
-    }
     return [{ value: "bombero", label: "Bombero" }];
   }, [currentProfile]);
   const [selectedMode, setSelectedMode] = useState<ServiceMode>("bombero");

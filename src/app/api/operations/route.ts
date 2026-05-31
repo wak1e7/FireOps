@@ -16,6 +16,7 @@ import type {
 import { isAllowedOrigin, jsonResponse, readJsonObject } from "@/lib/server-security";
 import { createSessionContext, sessionCookieOptions, validateSessionPolicy } from "@/lib/session-policy";
 import { sessionContextCookie, sessionStartedCookie } from "@/lib/session-policy-shared";
+import { sendPushToProfiles } from "@/lib/firebase-push";
 import { emergencyResponseLabel, emergencyTypeLabel, vehicleStatusLabel } from "@/modules/shared/utils/labels";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -33,11 +34,12 @@ type ActionPayload =
   | { action: "toggleVehicleActive"; vehicleId: string }
   | { action: "toggleService"; profileId: string; serviceMode?: ServiceMode; targetStatus?: ServiceStatus }
   | { action: "updateVehicleStatus"; vehicleId: string; status: VehicleStatus }
+  | { action: "togglePilotDuty"; profileId: string }
   | { action: "emitEmergencyAlert"; type: EmergencyType; description?: string; location?: string; issuerId: string }
   | { action: "respondToEmergencyAlert"; alertId: string; profileId: string; status: EmergencyResponseStatus }
   | { action: "cancelEmergencyAlert"; alertId: string; cancelledById: string }
   | { action: "expireEmergencyAlerts" }
-  | { action: "addNotification"; notification: FireNotification }
+  | { action: "registerFcmToken"; token: string; deviceLabel?: string }
   | { action: "markNotificationsRead"; ids?: string[] };
 
 type RoleRow = { roles?: { name?: RoleName } | null };
@@ -54,6 +56,7 @@ type ProfileRow = {
   pilot_type: PilotType | null;
   is_active: boolean;
   must_change_password: boolean;
+  can_login: boolean;
   ranks?: { name?: RankName } | null;
   special_positions?: { name?: Profile["specialPosition"] } | null;
   user_roles?: RoleRow[];
@@ -84,7 +87,8 @@ function mapProfile(row: ProfileRow): Profile {
     pilotType: row.pilot_type ?? undefined,
     canVolunteerAsPilot: Boolean(row.pilot_type),
     isActive: row.is_active,
-    mustChangePassword: row.must_change_password
+    mustChangePassword: row.must_change_password,
+    canLogin: row.can_login
   };
 }
 
@@ -130,13 +134,14 @@ async function currentUserProfile(request: Request) {
 
   const admin = createAdminClient();
   const fallbackCode = allowCodeAuthFallback ? request.headers.get("x-fireops-code")?.trim().toUpperCase() : undefined;
-  const query = admin.from("profiles").select("id, firefighter_code, user_roles(roles(name))");
+  const query = admin.from("profiles").select("id, firefighter_code, can_login, service_mode, user_roles(roles(name))");
   const { data } = user
     ? await query.eq("id", user.id).single()
     : fallbackCode
       ? await query.eq("firefighter_code", fallbackCode).single()
       : { data: null };
   if (!data) return null;
+  if (!data.can_login || data.service_mode === "piloto_voluntario" || data.service_mode === "piloto_rentado") return null;
   return { id: data.id as string, code: data.firefighter_code as string, role: roleFromRows(data.user_roles as RoleRow[]) };
 }
 
@@ -183,17 +188,22 @@ async function insertEvent(
 
 async function insertNotification(
   admin: ReturnType<typeof createAdminClient>,
-  notification: Pick<FireNotification, "title" | "body"> & { recipientIds?: string[] }
+  notification: Pick<FireNotification, "title" | "body"> & { recipientIds: string[]; url?: string }
 ) {
-  const rows: Array<{ company_id: string; recipient_id: string | null; title: string; body: string }> = notification.recipientIds?.length
-    ? notification.recipientIds.map((recipientId) => ({
-        company_id: companyId,
-        recipient_id: recipientId,
-        title: notification.title,
-        body: notification.body
-      }))
-    : [{ company_id: companyId, recipient_id: null, title: notification.title, body: notification.body }];
+  if (!notification.recipientIds.length) return;
+  const rows = notification.recipientIds.map((recipientId) => ({
+    company_id: companyId,
+    recipient_id: recipientId,
+    title: notification.title,
+    body: notification.body
+  }));
   await admin.from("notifications").insert(rows);
+  await sendPushToProfiles(notification.recipientIds, notification.title, notification.body, notification.url ?? "/operaciones");
+}
+
+async function recipientIdsForRoles(admin: ReturnType<typeof createAdminClient>, roles: RoleName[]) {
+  const { data } = await admin.from("profiles").select("id,user_roles!inner(roles!inner(name))").in("user_roles.roles.name", roles);
+  return [...new Set((data ?? []).map((profile) => profile.id))];
 }
 
 async function loadOperations() {
@@ -209,7 +219,7 @@ async function loadOperations() {
   ] = await Promise.all([
     admin
       .from("profiles")
-      .select("id,firefighter_code,auth_email,email,full_name,phone,service_status,service_mode,service_started_at,pilot_type,is_active,must_change_password,ranks(name),special_positions(name),user_roles(roles(name))")
+      .select("id,firefighter_code,auth_email,email,full_name,phone,service_status,service_mode,service_started_at,pilot_type,is_active,must_change_password,can_login,ranks(name),special_positions(name),user_roles(roles(name))")
       .order("full_name"),
     admin.from("vehicles").select("id,code,name,type,plate,status,is_active,observations,updated_at").order("code"),
     admin.from("operational_events").select("id,title,detail,severity,actor_id,created_at").order("created_at", { ascending: false }),
@@ -479,7 +489,8 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
           ? `${profile.full_name} entro al servicio.`
           : nextStatus === "en_alerta"
             ? `${profile.full_name} quedo en alerta.`
-            : `${profile.full_name} salio del servicio.`
+            : `${profile.full_name} salio del servicio.`,
+      recipientIds: await recipientIdsForRoles(admin, ["primer_jefe", "segundo_jefe"])
     });
   }
 
@@ -498,6 +509,40 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
       title: "Cambio de estado de vehiculo",
       detail: `${vehicle.name} cambio de ${vehicleStatusLabel[vehicle.status as VehicleStatus]} a ${vehicleStatusLabel[payload.status]}.`,
       severity: payload.status === "fuera_de_servicio" ? "danger" : payload.status === "operativo" ? "success" : "warning",
+      actorId: user.id
+    });
+    const { data: vehicleRecipients } = await admin.from("profiles").select("id").eq("company_id", companyId).eq("is_active", true);
+    await insertNotification(admin, {
+      title: "Cambio de estado de unidad",
+      body: `${vehicle.name} cambio de ${vehicleStatusLabel[vehicle.status as VehicleStatus]} a ${vehicleStatusLabel[payload.status]}.`,
+      recipientIds: (vehicleRecipients ?? []).map((profile) => profile.id)
+    });
+  }
+
+  if (payload.action === "togglePilotDuty") {
+    if (!isChiefOrAdmin(user.role)) return;
+    const { data: pilot } = await admin
+      .from("profiles")
+      .select("id,full_name,role:user_roles(roles(name)),service_status,service_mode,pilot_type")
+      .eq("id", payload.profileId)
+      .single();
+    if (!pilot || !pilot.pilot_type) return;
+    const isOnDuty = pilot.service_status === "en_servicio" && (pilot.service_mode === "piloto_voluntario" || pilot.service_mode === "piloto_rentado");
+    const nextStatus: ServiceStatus = isOnDuty ? "fuera_de_servicio" : "en_servicio";
+    const nextMode = isOnDuty ? null : roleFromRows(pilot.role as RoleRow[]) === "piloto" ? "piloto_rentado" : "piloto_voluntario";
+    await admin
+      .from("profiles")
+      .update({
+        service_status: nextStatus,
+        service_mode: nextMode,
+        service_started_at: isOnDuty ? null : new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", payload.profileId);
+    await insertEvent(admin, {
+      title: isOnDuty ? "Salida de piloto" : "Piloto de turno",
+      detail: `${pilot.full_name} ${isOnDuty ? "salio del turno de piloto" : "fue asignado como piloto de turno"}.`,
+      severity: isOnDuty ? "warning" : "success",
       actorId: user.id
     });
   }
@@ -535,7 +580,7 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
     }));
     if (recipientRows.length) await admin.from("emergency_alert_recipients").insert(recipientRows);
     const body = `${emergencyTypeLabel[payload.type]} reportado${payload.location?.trim() ? ` en ${payload.location.trim()}` : ""}. Se requiere personal disponible de la compania.`;
-    await insertNotification(admin, { title: "Alerta de emergencia", body, recipientIds: recipientRows.map((row) => row.profile_id) });
+    await insertNotification(admin, { title: "Alerta de emergencia", body, recipientIds: recipientRows.map((row) => row.profile_id), url: "/emergencias" });
     await insertEvent(admin, {
       title: "Alerta de emergencia",
       detail: `${emergencyTypeLabel[payload.type]} emitida por ${issuer?.full_name ?? "Jefatura"}. ${recipientRows.length} bomberos notificados.`,
@@ -564,7 +609,9 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
     const { data: profile } = await admin.from("profiles").select("full_name").eq("id", payload.profileId).single();
     await insertNotification(admin, {
       title: "Respuesta a alerta",
-      body: `${profile?.full_name ?? "Bombero"}: ${emergencyResponseLabel[payload.status]}.`
+      body: `${profile?.full_name ?? "Bombero"}: ${emergencyResponseLabel[payload.status]}.`,
+      recipientIds: await recipientIdsForRoles(admin, ["primer_jefe", "segundo_jefe"]),
+      url: "/emergencias"
     });
   }
 
@@ -580,7 +627,8 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
     await insertNotification(admin, {
       title: "Alerta cancelada",
       body: "La emergencia fue cancelada por jefatura.",
-      recipientIds: (recipients ?? []).map((recipient) => recipient.profile_id)
+      recipientIds: (recipients ?? []).map((recipient) => recipient.profile_id),
+      url: "/emergencias"
     });
     await insertEvent(admin, {
       title: "Alerta cancelada",
@@ -598,8 +646,17 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
       .lte("expires_at", new Date().toISOString());
   }
 
-  if (payload.action === "addNotification") {
-    await insertNotification(admin, payload.notification);
+  if (payload.action === "registerFcmToken") {
+    if (!payload.token.trim()) return;
+    await admin.from("fcm_tokens").upsert(
+      {
+        user_id: user.id,
+        token: payload.token.trim(),
+        device_label: payload.deviceLabel?.trim() || null,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: "token" }
+    );
   }
 
   if (payload.action === "markNotificationsRead") {

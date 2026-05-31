@@ -83,6 +83,7 @@ create table public.profiles (
   pilot_type public.pilot_type,
   is_active boolean not null default true,
   must_change_password boolean not null default true,
+  can_login boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint peru_phone_format check (phone is null or phone ~ '^\+51\s?9[0-9]{8}$')

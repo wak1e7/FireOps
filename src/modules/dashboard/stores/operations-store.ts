@@ -31,11 +31,11 @@ type OperationAction =
   | { action: "toggleVehicleActive"; vehicleId: string }
   | { action: "toggleService"; profileId: string; serviceMode?: ServiceMode; targetStatus?: ServiceStatus }
   | { action: "updateVehicleStatus"; vehicleId: string; status: VehicleStatus }
+  | { action: "togglePilotDuty"; profileId: string }
   | { action: "emitEmergencyAlert"; type: EmergencyType; description?: string; location?: string; issuerId: string }
   | { action: "respondToEmergencyAlert"; alertId: string; profileId: string; status: EmergencyResponseStatus }
   | { action: "cancelEmergencyAlert"; alertId: string; cancelledById: string }
   | { action: "expireEmergencyAlerts" }
-  | { action: "addNotification"; notification: FireNotification }
   | { action: "markNotificationsRead"; ids?: string[] };
 
 interface OperationsStore extends OperationsSnapshot {
@@ -51,11 +51,11 @@ interface OperationsStore extends OperationsSnapshot {
   toggleVehicleActive: (vehicleId: string) => void;
   toggleService: (profileId: string, serviceMode?: ServiceMode, targetStatus?: ServiceStatus) => void;
   updateVehicleStatus: (vehicleId: string, status: VehicleStatus) => void;
+  togglePilotDuty: (profileId: string) => void;
   emitEmergencyAlert: (payload: { type: EmergencyType; description?: string; location?: string; issuerId: string }) => void;
   respondToEmergencyAlert: (alertId: string, profileId: string, status: EmergencyResponseStatus) => void;
   cancelEmergencyAlert: (alertId: string, cancelledById: string) => void;
   expireEmergencyAlerts: () => void;
-  addNotification: (notification: FireNotification) => void;
   markNotificationsRead: (ids?: string[]) => void;
 }
 
@@ -146,12 +146,12 @@ export const useOperationsStore = create<OperationsStore>((set, get) => ({
   toggleService: (profileId, serviceMode, targetStatus) =>
     runAndRefresh(set, get, { action: "toggleService", profileId, serviceMode, targetStatus }),
   updateVehicleStatus: (vehicleId, status) => runAndRefresh(set, get, { action: "updateVehicleStatus", vehicleId, status }),
+  togglePilotDuty: (profileId) => runAndRefresh(set, get, { action: "togglePilotDuty", profileId }),
   emitEmergencyAlert: (payload) => runAndRefresh(set, get, { action: "emitEmergencyAlert", ...payload }),
   respondToEmergencyAlert: (alertId, profileId, status) =>
     runAndRefresh(set, get, { action: "respondToEmergencyAlert", alertId, profileId, status }),
   cancelEmergencyAlert: (alertId, cancelledById) =>
     runAndRefresh(set, get, { action: "cancelEmergencyAlert", alertId, cancelledById }),
   expireEmergencyAlerts: () => runAndRefresh(set, get, { action: "expireEmergencyAlerts" }),
-  addNotification: (notification) => runAndRefresh(set, get, { action: "addNotification", notification }),
   markNotificationsRead: (ids) => runAndRefresh(set, get, { action: "markNotificationsRead", ids })
 }));

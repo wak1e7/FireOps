@@ -37,7 +37,7 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(clients.openWindow("/operaciones"));
+  event.waitUntil(clients.openWindow(event.notification.data?.url || "/operaciones"));
 });
 `.trim();
 

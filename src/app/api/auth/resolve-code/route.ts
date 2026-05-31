@@ -21,12 +21,16 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("auth_email,email,must_change_password")
+    .select("auth_email,email,must_change_password,can_login,service_mode")
     .eq("firefighter_code", normalizedCode)
     .single();
 
   if (error || !data) {
     return jsonResponse({ message: "Código o contraseña inválidos." }, { status: 404 });
+  }
+
+  if (!data.can_login || data.service_mode === "piloto_voluntario" || data.service_mode === "piloto_rentado") {
+    return jsonResponse({ message: "Usuario sin acceso disponible." }, { status: 403 });
   }
 
   return jsonResponse({

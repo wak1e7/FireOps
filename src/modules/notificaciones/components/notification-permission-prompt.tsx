@@ -44,10 +44,10 @@ export function NotificationPermissionPrompt() {
     setLoading(true);
     saveAccountNotificationSettings({ enablePushNotifications: true });
     const result = await requestFcmToken();
-    markNotificationPermissionAskedOnDevice();
     setLoading(false);
 
     if (result.ok) {
+      markNotificationPermissionAskedOnDevice();
       setOpen(false);
       return;
     }
