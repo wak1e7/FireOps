@@ -1,4 +1,5 @@
 import { createSign } from "node:crypto";
+import webpush from "web-push";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 type FirebaseServiceAccount = {
@@ -91,4 +92,42 @@ export async function sendPushToProfiles(profileIds: string[], title: string, bo
   );
   const failed = results.filter((result) => result.status === "rejected").length;
   if (failed) console.warn(`[FireOps] Push delivery failed for ${failed} device(s).`);
+}
+
+export async function sendWebPushToProfiles(profileIds: string[], title: string, body: string, url: string) {
+  const publicKey = process.env.NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.WEB_PUSH_VAPID_PRIVATE_KEY;
+  const subject = process.env.WEB_PUSH_VAPID_SUBJECT ?? "mailto:admin@fireops.app";
+  if (!publicKey || !privateKey || !profileIds.length) {
+    if (!publicKey || !privateKey) console.warn("[FireOps] Web Push skipped: VAPID keys are not configured.");
+    return;
+  }
+
+  webpush.setVapidDetails(subject, publicKey, privateKey);
+  const admin = createAdminClient();
+  const { data: subscriptions } = await admin
+    .from("web_push_subscriptions")
+    .select("endpoint,p256dh,auth")
+    .in("user_id", profileIds);
+  const results = await Promise.allSettled(
+    (subscriptions ?? []).map(async (subscription) => {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: subscription.endpoint,
+            keys: { p256dh: subscription.p256dh, auth: subscription.auth }
+          },
+          JSON.stringify({ source: "fireops-web-push", title, body, url })
+        );
+      } catch (error) {
+        const statusCode = (error as { statusCode?: number }).statusCode;
+        if (statusCode === 404 || statusCode === 410) {
+          await admin.from("web_push_subscriptions").delete().eq("endpoint", subscription.endpoint);
+        }
+        throw error;
+      }
+    })
+  );
+  const failed = results.filter((result) => result.status === "rejected").length;
+  if (failed) console.warn(`[FireOps] Web Push delivery failed for ${failed} device(s).`);
 }

@@ -1,4 +1,5 @@
 drop table if exists public.fcm_tokens cascade;
+drop table if exists public.web_push_subscriptions cascade;
 drop table if exists public.notifications cascade;
 drop table if exists public.emergency_alert_responses cascade;
 drop table if exists public.emergency_alert_recipients cascade;
@@ -201,6 +202,17 @@ create table public.fcm_tokens (
   updated_at timestamptz not null default now()
 );
 
+create table public.web_push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  device_label text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index profiles_company_idx on public.profiles(company_id);
 create index profiles_firefighter_code_idx on public.profiles(firefighter_code);
 create index vehicles_company_status_idx on public.vehicles(company_id, status);
@@ -208,6 +220,7 @@ create index service_sessions_user_started_idx on public.service_sessions(user_i
 create index emergency_alerts_company_status_idx on public.emergency_alerts(company_id, status, created_at desc);
 create index emergency_alert_recipients_profile_idx on public.emergency_alert_recipients(profile_id);
 create index notifications_recipient_read_idx on public.notifications(recipient_id, read_at);
+create index web_push_subscriptions_user_idx on public.web_push_subscriptions(user_id);
 
 alter table public.companies enable row level security;
 alter table public.ranks enable row level security;
@@ -224,6 +237,7 @@ alter table public.emergency_alert_recipients enable row level security;
 alter table public.emergency_alert_responses enable row level security;
 alter table public.notifications enable row level security;
 alter table public.fcm_tokens enable row level security;
+alter table public.web_push_subscriptions enable row level security;
 
 create or replace function public.current_role_names()
 returns setof public.role_name
@@ -296,6 +310,7 @@ create policy "chiefs insert notifications" on public.notifications for insert t
   with check (public.has_role('admin') or public.has_role('primer_jefe') or public.has_role('segundo_jefe'));
 
 create policy "own fcm tokens" on public.fcm_tokens for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "own web push subscriptions" on public.web_push_subscriptions for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 insert into public.ranks (name, sort_order) values
   ('Seccionario', 1),

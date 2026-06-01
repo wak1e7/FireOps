@@ -16,7 +16,7 @@ import type {
 import { isAllowedOrigin, jsonResponse, readJsonObject } from "@/lib/server-security";
 import { createSessionContext, sessionCookieOptions, validateSessionPolicy } from "@/lib/session-policy";
 import { sessionContextCookie, sessionStartedCookie } from "@/lib/session-policy-shared";
-import { sendPushToProfiles } from "@/lib/firebase-push";
+import { sendPushToProfiles, sendWebPushToProfiles } from "@/lib/firebase-push";
 import { emergencyResponseLabel, emergencyTypeLabel, vehicleStatusLabel } from "@/modules/shared/utils/labels";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -199,6 +199,7 @@ async function insertNotification(
   await admin.from("notifications").insert(rows);
   try {
     await sendPushToProfiles(notification.recipientIds, notification.title, notification.body, notification.url ?? "/operaciones");
+    await sendWebPushToProfiles(notification.recipientIds, notification.title, notification.body, notification.url ?? "/operaciones");
   } catch (error) {
     console.error("[FireOps] Push delivery failed", error);
   }

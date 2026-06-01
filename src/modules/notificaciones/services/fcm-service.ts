@@ -45,6 +45,78 @@ export function accountNotificationsEnabled() {
   return loadAccountNotificationSettings().enablePushNotifications;
 }
 
+function base64UrlToUint8Array(value: string) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+  return Uint8Array.from([...raw].map((character) => character.charCodeAt(0)));
+}
+
+async function authorizationHeaders() {
+  const {
+    data: { session }
+  } = await createClient().auth.getSession();
+  return {
+    "Content-Type": "application/json",
+    ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+  };
+}
+
+async function requestWebPushSubscription(): Promise<FcmRegistrationResult> {
+  const publicKey = process.env.NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY;
+  if (!publicKey) {
+    return {
+      ok: false,
+      reason: "missing_config",
+      message: "Falta completar la configuracion Web Push para iPhone."
+    };
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    return {
+      ok: false,
+      reason: "permission_denied",
+      message: "Permiso de notificaciones denegado."
+    };
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+    let subscription = await registration.pushManager.getSubscription();
+    const previousPublicKey = window.localStorage.getItem("fireops-web-push-vapid-public-key");
+    if (subscription && previousPublicKey !== publicKey) {
+      await subscription.unsubscribe();
+      subscription = null;
+    }
+    subscription ??= await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: base64UrlToUint8Array(publicKey)
+    });
+    const serialized = subscription.toJSON();
+    const response = await fetch("/api/notifications/register-web-push", {
+      method: "POST",
+      headers: await authorizationHeaders(),
+      body: JSON.stringify({
+        endpoint: serialized.endpoint,
+        keys: serialized.keys,
+        deviceLabel: navigator.userAgent.slice(0, 180)
+      })
+    });
+    if (!response.ok) throw new Error("No se pudo guardar la suscripcion Web Push.");
+    window.localStorage.setItem("fireops-web-push-endpoint", subscription.endpoint);
+    window.localStorage.setItem("fireops-web-push-vapid-public-key", publicKey);
+    return { ok: true, token: subscription.endpoint };
+  } catch (error) {
+    console.error("[FireOps] Web Push registration failed", error);
+    return {
+      ok: false,
+      reason: "token_error",
+      message: "No se pudo registrar este dispositivo para Web Push."
+    };
+  }
+}
+
 export async function getFcmMessaging(): Promise<Messaging | null> {
   if (!(await isSupported())) return null;
   if (!hasFirebaseConfig()) return null;
@@ -76,6 +148,8 @@ export async function requestFcmToken(): Promise<FcmRegistrationResult> {
       message: "En iPhone, instala FireOps en la pantalla de inicio para activar notificaciones push."
     };
   }
+
+  if (isIosBrowser()) return requestWebPushSubscription();
 
   if (!process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || !hasFirebaseConfig()) {
     return {
@@ -119,15 +193,9 @@ export async function requestFcmToken(): Promise<FcmRegistrationResult> {
     }
 
     window.localStorage.setItem("fireops-fcm-token", token);
-    const {
-      data: { session }
-    } = await createClient().auth.getSession();
     const response = await fetch("/api/notifications/register-token", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
-      },
+      headers: await authorizationHeaders(),
       body: JSON.stringify({
         token,
         deviceLabel: navigator.userAgent.slice(0, 180)
@@ -147,18 +215,24 @@ export async function requestFcmToken(): Promise<FcmRegistrationResult> {
 
 export async function unregisterCurrentFcmToken() {
   if (typeof window === "undefined") return;
+  const webPushEndpoint = window.localStorage.getItem("fireops-web-push-endpoint");
+  if (webPushEndpoint) {
+    const response = await fetch("/api/notifications/register-web-push", {
+      method: "DELETE",
+      headers: await authorizationHeaders(),
+      body: JSON.stringify({ endpoint: webPushEndpoint })
+    });
+    if (!response.ok) throw new Error("No se pudo retirar el dispositivo.");
+    window.localStorage.removeItem("fireops-web-push-endpoint");
+    window.localStorage.removeItem("fireops-web-push-vapid-public-key");
+  }
+
   const token = window.localStorage.getItem("fireops-fcm-token");
   if (!token) return;
 
-  const {
-    data: { session }
-  } = await createClient().auth.getSession();
   const response = await fetch("/api/notifications/register-token", {
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
-    },
+    headers: await authorizationHeaders(),
     body: JSON.stringify({ token })
   });
   if (!response.ok) throw new Error("No se pudo retirar el dispositivo.");

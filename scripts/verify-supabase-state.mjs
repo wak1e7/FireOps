@@ -36,7 +36,8 @@ const tables = [
   "emergency_alert_recipients",
   "emergency_alert_responses",
   "notifications",
-  "fcm_tokens"
+  "fcm_tokens",
+  "web_push_subscriptions"
 ];
 
 const counts = Object.fromEntries(await Promise.all(tables.map(async (table) => [table, await countRows(table)])));
