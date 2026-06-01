@@ -9,7 +9,6 @@ import { ServiceStatusCard } from "@/modules/dashboard/components/service-status
 import { useOperationsStore } from "@/modules/dashboard/stores/operations-store";
 import { getCurrentProfile, isChiefProfile } from "@/modules/shared/utils/current-profile";
 import { VehicleList } from "@/modules/vehiculos/components/vehicle-list";
-import { PilotDutyPanel } from "@/modules/pilotos/components/pilot-duty-panel";
 
 export function DashboardPage() {
   const profiles = useOperationsStore((state) => state.profiles);
@@ -56,15 +55,19 @@ export function DashboardPage() {
         <section className="grid gap-3 md:grid-cols-3">
           <MetricCard title="Bomberos en servicio" value={activeFirefighters.length} icon={Flame} tone="green" />
           <MetricCard title="Pilotos en servicio" value={activePilots.length} icon={Gauge} tone="blue" />
-          <MetricCard title="Unidades operativas" value={operationalVehicles.length} icon={Truck} tone="green" />
+          <MetricCard
+            title="Unidades operativas"
+            value={operationalVehicles.length}
+            icon={Truck}
+            tone="green"
+            items={operationalVehicles.map((vehicle) => vehicle.name)}
+          />
         </section>
 
         <section className="grid gap-5 xl:grid-cols-2">
           <ActivePersonnelList title="Bomberos en servicio" role="bombero" />
           <ActivePersonnelList title="Pilotos en servicio" role="piloto" />
         </section>
-
-        <PilotDutyPanel />
 
         <VehicleList />
       </div>

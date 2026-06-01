@@ -5,12 +5,14 @@ export function MetricCard({
   title,
   value,
   icon: Icon,
-  tone
+  tone,
+  items
 }: {
   title: string;
   value: number;
   icon: LucideIcon;
   tone: "red" | "green" | "amber" | "blue";
+  items?: string[];
 }) {
   const colors = {
     red: "bg-red-500/14 text-red-100",
@@ -30,6 +32,9 @@ export function MetricCard({
           <Icon className="h-6 w-6" />
         </div>
       </div>
+      {items?.length ? (
+        <p className="mt-3 line-clamp-2 text-xs font-semibold leading-5 text-white/58">{items.join(" · ")}</p>
+      ) : null}
     </Card>
   );
 }
