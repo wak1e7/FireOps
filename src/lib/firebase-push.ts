@@ -95,7 +95,7 @@ export async function sendPushToProfiles(profileIds: string[], title: string, bo
 }
 
 export async function sendWebPushToProfiles(profileIds: string[], title: string, body: string, url: string) {
-  const publicKey = process.env.NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY;
+  const publicKey = process.env.WEB_PUSH_VAPID_PUBLIC_KEY;
   const privateKey = process.env.WEB_PUSH_VAPID_PRIVATE_KEY;
   const subject = process.env.WEB_PUSH_VAPID_SUBJECT ?? "mailto:admin@fireops.app";
   if (!publicKey || !privateKey || !profileIds.length) {
