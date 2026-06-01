@@ -39,7 +39,6 @@ type ActionPayload =
   | { action: "respondToEmergencyAlert"; alertId: string; profileId: string; status: EmergencyResponseStatus }
   | { action: "cancelEmergencyAlert"; alertId: string; cancelledById: string }
   | { action: "expireEmergencyAlerts" }
-  | { action: "registerFcmToken"; token: string; deviceLabel?: string }
   | { action: "markNotificationsRead"; ids?: string[] };
 
 type RoleRow = { roles?: { name?: RoleName } | null };
@@ -198,7 +197,11 @@ async function insertNotification(
     body: notification.body
   }));
   await admin.from("notifications").insert(rows);
-  await sendPushToProfiles(notification.recipientIds, notification.title, notification.body, notification.url ?? "/operaciones");
+  try {
+    await sendPushToProfiles(notification.recipientIds, notification.title, notification.body, notification.url ?? "/operaciones");
+  } catch (error) {
+    console.error("[FireOps] Push delivery failed", error);
+  }
 }
 
 async function recipientIdsForRoles(admin: ReturnType<typeof createAdminClient>, roles: RoleName[]) {
@@ -644,19 +647,6 @@ async function handleAction(payload: ActionPayload, user: NonNullable<Awaited<Re
       .update({ status: "expired" })
       .eq("status", "active")
       .lte("expires_at", new Date().toISOString());
-  }
-
-  if (payload.action === "registerFcmToken") {
-    if (!payload.token.trim()) return;
-    await admin.from("fcm_tokens").upsert(
-      {
-        user_id: user.id,
-        token: payload.token.trim(),
-        device_label: payload.deviceLabel?.trim() || null,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "token" }
-    );
   }
 
   if (payload.action === "markNotificationsRead") {

@@ -21,23 +21,12 @@ firebase.initializeApp({
   measurementId: ${jsString(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID)}
 });
 
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage((payload) => {
-  const title = payload.notification?.title || "FireOps";
-  const options = {
-    body: payload.notification?.body || "Nueva actividad operativa",
-    icon: "/favicon.png",
-    badge: "/favicon.png",
-    data: payload.data || {}
-  };
-
-  self.registration.showNotification(title, options);
-});
+firebase.messaging();
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(clients.openWindow(event.notification.data?.url || "/operaciones"));
+  const url = event.notification.data?.url || event.notification.data?.FCM_MSG?.data?.url || "/operaciones";
+  event.waitUntil(clients.openWindow(url));
 });
 `.trim();
 

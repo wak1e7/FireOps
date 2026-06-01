@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { browserSupportsNotifications, requestFcmToken } from "@/modules/notificaciones/services/fcm-service";
 import {
   hasAskedNotificationPermissionOnDevice,
+  loadAccountNotificationSettings,
   markNotificationPermissionAskedOnDevice,
   saveAccountNotificationSettings
 } from "@/modules/notificaciones/utils/notification-settings";
@@ -16,16 +17,16 @@ export function NotificationPermissionPrompt() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (hasAskedNotificationPermissionOnDevice()) return;
     if (!browserSupportsNotifications()) return;
 
-    const existingToken = window.localStorage.getItem("fireops-fcm-token");
-    if (existingToken || Notification.permission === "granted") {
-      saveAccountNotificationSettings({ enablePushNotifications: true });
-      markNotificationPermissionAskedOnDevice();
-      requestFcmToken();
+    if (Notification.permission === "granted" && loadAccountNotificationSettings().enablePushNotifications) {
+      requestFcmToken().then((result) => {
+        if (result.ok) markNotificationPermissionAskedOnDevice();
+      });
       return;
     }
+
+    if (hasAskedNotificationPermissionOnDevice()) return;
 
     if (Notification.permission === "denied") {
       saveAccountNotificationSettings({ enablePushNotifications: false });

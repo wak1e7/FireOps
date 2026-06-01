@@ -8,7 +8,7 @@ import {
   loadAccountNotificationSettings,
   saveAccountNotificationSettings
 } from "@/modules/notificaciones/utils/notification-settings";
-import { requestFcmToken } from "@/modules/notificaciones/services/fcm-service";
+import { requestFcmToken, unregisterCurrentFcmToken } from "@/modules/notificaciones/services/fcm-service";
 import { useToast } from "@/modules/shared/components/toast-provider";
 
 type NotificationOption = {
@@ -64,6 +64,8 @@ export function ConfiguracionPage() {
     saveAccountNotificationSettings(nextSettings);
     if (value) {
       await requestFcmToken();
+    } else {
+      await unregisterCurrentFcmToken();
     }
     showToast();
   }

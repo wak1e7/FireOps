@@ -51,6 +51,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (!loaded) loadOperations();
   }, [loadOperations, loaded]);
 
+  useEffect(() => {
+    function refreshWhenVisible() {
+      if (document.visibilityState === "visible") loadOperations();
+    }
+
+    const timer = window.setInterval(refreshWhenVisible, 30_000);
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [loadOperations]);
+
   function openMobileNav() {
     setMobileNavClosing(false);
     setMobileNavOpen(true);

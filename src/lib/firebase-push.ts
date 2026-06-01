@@ -52,7 +52,11 @@ async function accessToken(account: FirebaseServiceAccount) {
 
 export async function sendPushToProfiles(profileIds: string[], title: string, body: string, url: string) {
   const account = serviceAccount();
-  if (!account || !profileIds.length) return;
+  if (!account) {
+    console.warn("[FireOps] Push skipped: FIREBASE_SERVICE_ACCOUNT_JSON is not configured.");
+    return;
+  }
+  if (!profileIds.length) return;
 
   const admin = createAdminClient();
   const { data: tokenRows } = await admin.from("fcm_tokens").select("token").in("user_id", profileIds);
@@ -60,7 +64,7 @@ export async function sendPushToProfiles(profileIds: string[], title: string, bo
   if (!tokens.length) return;
 
   const token = await accessToken(account);
-  await Promise.allSettled(
+  const results = await Promise.allSettled(
     tokens.map(async (deviceToken) => {
       const response = await fetch(`https://fcm.googleapis.com/v1/projects/${account.project_id}/messages:send`, {
         method: "POST",
@@ -78,10 +82,13 @@ export async function sendPushToProfiles(profileIds: string[], title: string, bo
         })
       });
 
-      if (response.status === 404 || response.status === 410) {
+      const responseBody = response.ok ? "" : await response.text();
+      if (response.status === 404 || response.status === 410 || responseBody.includes("UNREGISTERED")) {
         await admin.from("fcm_tokens").delete().eq("token", deviceToken);
       }
       if (!response.ok) throw new Error(`Firebase send failed (${response.status}).`);
     })
   );
+  const failed = results.filter((result) => result.status === "rejected").length;
+  if (failed) console.warn(`[FireOps] Push delivery failed for ${failed} device(s).`);
 }

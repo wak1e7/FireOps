@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from "firebase/app";
 import { getMessaging, getToken, isSupported, onMessage, type Messaging, type MessagePayload } from "firebase/messaging";
 import { loadAccountNotificationSettings } from "@/modules/notificaciones/utils/notification-settings";
+import { createClient } from "@/utils/supabase/client";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -118,11 +119,16 @@ export async function requestFcmToken(): Promise<FcmRegistrationResult> {
     }
 
     window.localStorage.setItem("fireops-fcm-token", token);
-    const response = await fetch("/api/operations", {
+    const {
+      data: { session }
+    } = await createClient().auth.getSession();
+    const response = await fetch("/api/notifications/register-token", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+      },
       body: JSON.stringify({
-        action: "registerFcmToken",
         token,
         deviceLabel: navigator.userAgent.slice(0, 180)
       })
@@ -139,13 +145,33 @@ export async function requestFcmToken(): Promise<FcmRegistrationResult> {
   }
 }
 
+export async function unregisterCurrentFcmToken() {
+  if (typeof window === "undefined") return;
+  const token = window.localStorage.getItem("fireops-fcm-token");
+  if (!token) return;
+
+  const {
+    data: { session }
+  } = await createClient().auth.getSession();
+  const response = await fetch("/api/notifications/register-token", {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {})
+    },
+    body: JSON.stringify({ token })
+  });
+  if (!response.ok) throw new Error("No se pudo retirar el dispositivo.");
+  window.localStorage.removeItem("fireops-fcm-token");
+}
+
 export async function subscribeForegroundMessages(onNotification: (payload: MessagePayload) => void) {
   const messaging = await getFcmMessaging();
   if (!messaging) return () => undefined;
   return onMessage(messaging, onNotification);
 }
 
-export async function showSystemNotification(title: string, body: string) {
+export async function showSystemNotification(title: string, body: string, url = "/operaciones") {
   if (!accountNotificationsEnabled()) return;
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   if (!("serviceWorker" in navigator)) return;
@@ -155,6 +181,6 @@ export async function showSystemNotification(title: string, body: string) {
     body,
     icon: "/favicon.png",
     badge: "/favicon.png",
-    data: { url: "/operaciones" }
+    data: { url }
   });
 }

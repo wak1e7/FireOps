@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Bell, Megaphone, X } from "lucide-react";
@@ -25,8 +25,6 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const router = useRouter();
-  const initializedNotificationsRef = useRef(false);
-  const seenNotificationIdsRef = useRef<Set<string>>(new Set());
   const profiles = useOperationsStore((state) => state.profiles);
   const allNotifications = useOperationsStore((state) => state.notifications);
   const loadOperations = useOperationsStore((state) => state.loadOperations);
@@ -70,6 +68,7 @@ export function NotificationBell() {
   function openPanel() {
     setClosing(false);
     setOpen(true);
+    loadOperations();
   }
 
   function closePanel() {
@@ -81,24 +80,13 @@ export function NotificationBell() {
   }
 
   useEffect(() => {
-    if (!initializedNotificationsRef.current) {
-      seenNotificationIdsRef.current = new Set(notifications.map((notification) => notification.id));
-      initializedNotificationsRef.current = true;
-      return;
-    }
-
-    const freshNotification = notifications.find((notification) => !seenNotificationIdsRef.current.has(notification.id));
-    notifications.forEach((notification) => seenNotificationIdsRef.current.add(notification.id));
-
-    if (freshNotification) {
-      showSystemNotification(freshNotification.title, freshNotification.body);
-    }
-  }, [notifications]);
-
-  useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     subscribeForegroundMessages((payload) => {
-      showSystemNotification(payload.notification?.title ?? "FireOps", payload.notification?.body ?? "Nueva actividad operativa");
+      showSystemNotification(
+        payload.notification?.title ?? "FireOps",
+        payload.notification?.body ?? "Nueva actividad operativa",
+        payload.data?.url ?? "/operaciones"
+      );
       loadOperations();
     }).then((cleanup) => {
       unsubscribe = cleanup;
