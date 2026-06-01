@@ -63,8 +63,10 @@ async function authorizationHeaders() {
 }
 
 async function requestWebPushSubscription(): Promise<FcmRegistrationResult> {
-  const publicKey = process.env.NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY;
-  if (!publicKey) {
+  const configResponse = await fetch("/api/notifications/web-push-config", { cache: "no-store" });
+  const config = (await configResponse.json().catch(() => null)) as { publicKey?: string } | null;
+  const publicKey = config?.publicKey;
+  if (!configResponse.ok || !publicKey) {
     return {
       ok: false,
       reason: "missing_config",
