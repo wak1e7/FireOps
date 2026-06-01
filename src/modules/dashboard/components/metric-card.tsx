@@ -23,18 +23,22 @@ export function MetricCard({
 
   return (
     <Card className="p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/45">{title}</p>
+      <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/45">{title}</p>
+      <div className="mt-2 flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-4">
           <p className="mt-2 text-3xl font-bold">{value}</p>
+          {items?.length ? (
+            <ul className="min-w-0 space-y-1 pt-1 text-xs font-semibold leading-4 text-white/58">
+              {items.map((item) => (
+                <li key={item} className="truncate">{item}</li>
+              ))}
+            </ul>
+          ) : null}
         </div>
         <div className={`grid h-12 w-12 place-items-center rounded-2xl ${colors[tone]}`}>
           <Icon className="h-6 w-6" />
         </div>
       </div>
-      {items?.length ? (
-        <p className="mt-3 line-clamp-2 text-xs font-semibold leading-5 text-white/58">{items.join(" · ")}</p>
-      ) : null}
     </Card>
   );
 }

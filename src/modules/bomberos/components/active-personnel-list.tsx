@@ -7,18 +7,10 @@ import { Card } from "@/components/ui/card";
 import { formatServiceDuration } from "@/lib/utils";
 import { useOperationsStore } from "@/modules/dashboard/stores/operations-store";
 import { getCurrentProfile, isChiefProfile } from "@/modules/shared/utils/current-profile";
-import type { PilotType, RoleName, ServiceMode } from "@/modules/shared/types/domain";
+import type { RoleName, ServiceMode } from "@/modules/shared/types/domain";
 
 function isServingAsPilot(serviceMode?: ServiceMode | null) {
   return serviceMode === "piloto_voluntario" || serviceMode === "piloto_rentado";
-}
-
-function serviceLabel(serviceMode?: ServiceMode | null, pilotType?: PilotType) {
-  if (serviceMode === "piloto_rentado") return "Piloto principal";
-  if (serviceMode === "piloto_voluntario") return "Piloto voluntario";
-  if (pilotType === "rentado") return "Piloto principal";
-  if (pilotType === "voluntario") return "Piloto voluntario";
-  return "Bombero";
 }
 
 export function ActivePersonnelList({
@@ -93,7 +85,7 @@ export function ActivePersonnelList({
                     ) : null}
                   </div>
                   <p className="text-sm text-white/55">
-                    {profile.rank} · {serviceLabel(profile.serviceMode, profile.pilotType)}
+                    {profile.rank} · {role === "piloto" ? "Piloto" : "Bombero"}
                   </p>
                   {profile.serviceStatus === "en_servicio" && (!pilotOnDuty || isServingAsPilot(profile.serviceMode)) ? (
                     <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-emerald-100/80">
