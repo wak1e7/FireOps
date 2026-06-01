@@ -63,7 +63,9 @@ export function ConfiguracionPage() {
     setOpen(false);
     saveAccountNotificationSettings(nextSettings);
     if (value) {
-      await requestFcmToken();
+      const result = await requestFcmToken();
+      showToast(result.ok ? "Notificaciones activadas en este dispositivo." : result.message);
+      return;
     } else {
       await unregisterCurrentFcmToken();
     }

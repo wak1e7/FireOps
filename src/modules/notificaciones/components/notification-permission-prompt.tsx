@@ -21,7 +21,12 @@ export function NotificationPermissionPrompt() {
 
     if (Notification.permission === "granted" && loadAccountNotificationSettings().enablePushNotifications) {
       requestFcmToken().then((result) => {
-        if (result.ok) markNotificationPermissionAskedOnDevice();
+        if (result.ok) {
+          markNotificationPermissionAskedOnDevice();
+          return;
+        }
+        setStatus(result.message);
+        setOpen(true);
       });
       return;
     }
